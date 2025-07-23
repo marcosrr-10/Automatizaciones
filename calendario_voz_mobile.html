@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario por Voz</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --light-gray: #f9fafb;
+            --white: #ffffff;
+            --border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #f9fafb 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            color: var(--dark);
+            /* Prevenir zoom en iOS */
+            -webkit-text-size-adjust: 100%;
+            /* Prevenir selección accidental */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .main-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 720px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 32px;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 32px 24px 24px;
+            text-align: center;
+            color: var(--white);
+            position: relative;
+        }
+
+        .header-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: var(--white);
+            border-radius: 16px 16px 0 0;
+            transform: translateY(8px);
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .main-content {
+            padding: 32px 24px;
+        }
+
+        .config-section {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .config-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .webhook-input-group {
+            position: relative;
+        }
+
+        .webhook-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+
+        .webhook-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: var(--white);
+            /* Prevenir zoom en iOS */
+            font-size: 16px;
+        }
+
+        .webhook-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .instructions-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .instructions-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .icon-wrapper {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .instructions-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .instruction-text {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .pattern-formula {
+            background: var(--light-gray);
+            border: 2px dashed var(--primary-light);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .pattern-item {
+            background: var(--primary);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .pattern-formula .fas {
+            color: var(--primary-dark);
+            font-size: 14px;
+            transform: rotate(90deg);
+        }
+
+        .example-section {
+            background: var(--light-gray);
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 3px solid var(--success);
+        }
+
+        .example-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--success);
+            font-size: 14px;
+        }
+
+        .example-box {
+            background: var(--white);
+            border-radius: 6px;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .example-text {
+            font-size: 14px;
+            color: var(--dark);
+            font-weight: 500;
+            font-style: italic;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .recording-section {
+            text-align: center;
+            padding: 24px;
+            background: var(--white);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .record-btn {
+            width: 80px;
+            height: 80px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: var(--white);
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            position: relative;
+            margin-bottom: 16px;
+            /* Mejores toques en móvil */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .record-btn:hover, .record-btn:active {
+            transform: scale(0.95);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
+            animation: recording-pulse 1.5s infinite;
+        }
+
+        @keyframes recording-pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .status-display {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--dark);
+            margin-bottom: 16px;
+            min-height: 24px;
+        }
+
+        .transcript-area {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 80px;
+            color: var(--gray);
+            font-style: italic;
+            line-height: 1.5;
+            text-align: left;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            /* Permitir selección en el transcript */
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        .transcript-area.has-content {
+            color: var(--dark);
+            font-style: normal;
+            font-weight: 500;
+            border-color: var(--primary);
+        }
+
+        .success-alert, .error-alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .success-alert {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border: 1px solid var(--success);
+            color: #065f46;
+        }
+
+        .error-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid var(--error);
+            color: #7f1d1d;
+        }
+
+        .loading-indicator {
+            display: none;
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 16px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .https-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid var(--warning);
+            color: #92400e;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .footer {
+            padding: 16px;
+            text-align: center;
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Responsive específico para móviles */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .main-container {
+                margin: 0;
+                border-radius: 12px;
+            }
+
+            .header-section {
+                padding: 24px 16px 16px;
+            }
+
+            .app-title {
+                font-size: 20px;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .app-subtitle {
+                font-size: 13px;
+            }
+
+            .main-content {
+                padding: 24px 16px;
+            }
+
+            .config-section, .instructions-card, .recording-section {
+                padding: 16px;
+            }
+
+            .record-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Prevenir comportamientos móviles no deseados */
+        input, button {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* Mejorar contraste para accesibilidad */
+        @media (prefers-color-scheme: dark) {
+            /* Aquí podrías añadir un modo oscuro si lo deseas */
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-section">
+            <h1 class="app-title">
+                <i class="fas fa-microphone-alt"></i>
+                <span>Calendario por Voz</span>
+            </h1>
+            <p class="app-subtitle">Programa eventos en tu calendario con comandos de voz simples y naturales</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- Aviso HTTPS -->
+            <div id="httpsWarning" class="https-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Para usar el micrófono en móviles, necesitas acceder desde HTTPS</span>
+            </div>
+
+            <!-- Sección de configuración del webhook -->
+            <div class="config-section">
+                <h3 class="config-title">
+                    <i class="fas fa-cog"></i>
+                    Configuración
+                </h3>
+                <div class="webhook-input-group">
+                    <label class="webhook-label" for="webhookUrl">URL del Webhook (Make.com):</label>
+                    <input 
+                        type="url" 
+                        id="webhookUrl" 
+                        class="webhook-input" 
+                        placeholder="https://hook.eu2.make.com/tu-webhook-url"
+                        required
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                    >
+                </div>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="instructions-card">
+                <div class="instructions-header">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-microphone"></i>
+                    </div>
+                    <h3>Instrucciones de Uso</h3>
+                </div>
+                
+                <p class="instruction-text">
+                    Para programar un evento, utiliza el siguiente formato en tu comando de voz:
+                </p>
+                <div class="pattern-formula">
+                    <span class="pattern-item">Evento</span>
+                    <i class="fas fa-arrow-down"></i>
+                    <span class="pattern-item">día</span>
+                    <i class="fas fa-arrow-down"></i>
+                    <span class="pattern-item">fecha</span>
+                    <i class="fas fa-arrow-down"></i>
+                    <span class="pattern-item">hora</span>
+                </div>
+                
+                <div class="example-section">
+                    <div class="example-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Ejemplo:</span>
+                    </div>
+                    <div class="example-box">
+                        <p class="example-text">"Evento: Reunión con Ana, Dia: jueves, Fecha: 25 de julio, Hora: 11"</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de grabación -->
+            <div class="recording-section">
+                <button id="recordButton" class="record-btn">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                
+                <div id="statusText" class="status-display">
+                    Toca el micrófono para comenzar
+                </div>
+                
+                <div class="loading-indicator" id="loadingSpinner"></div>
+                
+                <div id="transcript" class="transcript-area">
+                    Tu mensaje de voz aparecerá aquí...
+                </div>
+                
+                <div id="successMessage" class="success-alert">
+                    <i class="fas fa-check-circle"></i>
+                    <span>¡Evento programado correctamente!</span>
+                </div>
+                
+                <div id="errorMessage" class="error-alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="errorText">Error al procesar la solicitud</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Desarrollado con <i class="fas fa-heart"></i> por el equipo de Calendario por Voz</p>
+    </footer>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let wakeLock = null;
+
+        const recordButton = document.getElementById('recordButton');
+        const statusText = document.getElementById('statusText');
+        const transcript = document.getElementById('transcript');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const webhookInput = document.getElementById('webhookUrl');
+        const httpsWarning = document.getElementById('httpsWarning');
+
+        // Verificar HTTPS en móviles
+        function checkHTTPS() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile && location.protocol !== 'https:') {
+                httpsWarning.style.display = 'flex';
+                recordButton.disabled = true;
+                recordButton.style.opacity = '0.5';
+                return false;
+            }
+            return true;
+        }
+
+        // Gestión mejorada de permisos
+        async function requestMicrophonePermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop()); // Liberar inmediatamente
+                return true;
+            } catch (error) {
+                console.error('Error requesting microphone permission:', error);
+                
+                let errorMsg = 'No se pudo acceder al micrófono.';
+                if (error.name === 'NotAllowedError') {
+                    errorMsg = 'Permisos de micrófono denegados. Habilítalos en la configuración.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMsg = 'No se encontró micrófono disponible.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMsg = 'Tu navegador no soporta grabación de audio.';
+                }
+                
+                showError(errorMsg);
+                return false;
+            }
+        }
+
+        recordButton.addEventListener('click', toggleRecording);
+
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            // Verificar URL webhook
+            if (!webhookInput.value.trim() || !isValidUrl(webhookInput.value.trim())) {
+                showError('Por favor, introduce una URL de webhook válida');
+                return;
+            }
+
+            // Prevenir suspensión en móviles durante grabación
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log('Wake Lock not supported or failed:', err);
+            }
+
+            try {
+                clearMessages();
+                
+                // Solicitar permisos explícitamente
+                const hasPermission = await requestMicrophonePermission();
+                if (!hasPermission) return;
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        // Configuración específica para móviles
+                        sampleRate: 44100,
+                        channelCount: 1
+                    } 
+                });
+
+                // Detectar formato de audio soportado
+                let options = {};
+                const supportedTypes = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4',
+                    'audio/wav'
+                ];
+
+                for (const type of supportedTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        options = { mimeType: type };
+                        break;
+                    }
+                }
+
+                mediaRecorder = new MediaRecorder(stream, options);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { 
+                        type: mediaRecorder.mimeType || 'audio/webm' 
+                    });
+                    await sendAudioToWebhook(audioBlob);
+                    
+                    // Liberar wake lock
+                    if (wakeLock) {
+                        wakeLock.release();
+                        wakeLock = null;
+                    }
+                };
+
+                mediaRecorder.onerror = (event) => {
+                    console.error('Error en MediaRecorder:', event.error);
+                    showError('Error al grabar el audio. Inténtalo de nuevo.');
+                    
+                    if (wakeLock) {
+                        wakeLock.release();
+                        wakeLock = null;
+                    }
+                };
+
+                mediaRecorder.start(1000);
+                isRecording = true;
+                
+                recordButton.classList.add('recording');
+                recordButton.innerHTML = '<i class="fas fa-stop"></i>';
+                statusText.textContent = 'Grabando... Toca para detener';
+                transcript.textContent = 'Escuchando tu mensaje...';
+                transcript.classList.remove('has-content');
+                
+            } catch (error) {
+                console.error('Error al iniciar grabación:', error);
+                handleMicrophoneError(error);
+                
+                if (wakeLock) {
+                    wakeLock.release();
+                    wakeLock = null;
+                }
+            }
+        }
+
+        function handleMicrophoneError(error) {
+            let errorMessage = 'Error al acceder al micrófono.';
+            
+            switch (error.name) {
+                case 'NotAllowedError':
+                    errorMessage = 'Permisos denegados. Ve a Configuración > Privacidad > Micrófono y habilita el acceso.';
+                    break;
+                case 'NotFoundError':
+                    errorMessage = 'No se encontró micrófono disponible.';
+                    break;
+                case 'NotReadableError':
+                    errorMessage = 'El micrófono está siendo usado por otra aplicación.';
+                    break;
+                case 'NotSupportedError':
+                    errorMessage = 'Tu navegador no soporta grabación de audio.';
+                    break;
+                case 'SecurityError':
+                    errorMessage = 'Acceso denegado por razones de seguridad. ¿Estás usando HTTPS?';
+                    break;
+            }
+            
+            showError(errorMessage);
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                recordButton.classList.remove('recording');
+                recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                statusText.textContent = 'Procesando audio...';
+                loadingSpinner.style.display = 'block';
+                
+                // Liberar el micrófono
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        async function sendAudioToWebhook(audioBlob) {
+            const webhookUrl = webhookInput.value.trim();
+            
+            try {
+                if (audioBlob.size === 0) {
+                    throw new Error('El audio está vacío. Intenta grabar de nuevo.');
+                }
+                
+                // Verificar tamaño mínimo (1 segundo ≈ 8KB)
+                if (audioBlob.size < 1000) {
+                    throw new Error('Audio demasiado corto. Graba al menos 1 segundo.');
+                }
+                
+                const formData = new FormData();
+                let filename = 'recording.webm';
+                if (audioBlob.type.includes('mp4')) {
+                    filename = 'recording.mp4';
+                } else if (audioBlob.type.includes('wav')) {
+                    filename = 'recording.wav';
+                } else if (audioBlob.type.includes('opus')) {
+                    filename = 'recording.opus';
+                }
+                
+                formData.append('audio', audioBlob, filename);
+
+                // Timeout más largo para móviles con conexión lenta
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json, text/plain, */*'
+                    },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                let transcript = '';
+
+                try {
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
+                        transcript = result.transcript || result.message || 'Evento procesado correctamente';
+                    } else {
+                        const resultText = await response.text();
+                        transcript = resultText.trim() || 'Evento procesado correctamente';
+                    }
+                } catch (parseError) {
+                    transcript = 'Evento procesado correctamente';
+                }
+
+                handleSuccess(transcript);
+
+            } catch (error) {
+                console.error('Error en sendAudioToWebhook:', error);
+                
+                let errorMessage = 'Error al procesar la solicitud';
+                
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Tiempo de espera agotado. Verifica tu conexión.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage = 'Sin conexión a internet. Verifica tu red.';
+                } else if (error.message.includes('404')) {
+                    errorMessage = 'URL del webhook no encontrada.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Error del servidor. Inténtalo más tarde.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+
+                handleError(errorMessage);
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        function handleSuccess(transcriptText) {
+            document.getElementById('transcript').textContent = transcriptText;
+            document.getElementById('transcript').classList.add('has-content');
+            showSuccess();
