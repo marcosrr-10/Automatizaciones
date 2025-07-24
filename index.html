@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Calendario por Voz</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -40,17 +42,15 @@
             align-items: center;
             padding: 16px;
             color: var(--dark);
-            /* Prevenir zoom en iOS */
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
-            /* Prevenir selección accidental */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
-            /* Mejorar rendimiento en móviles */
             -webkit-transform: translateZ(0);
             transform: translateZ(0);
+            overscroll-behavior: none;
         }
 
         .main-container {
@@ -144,9 +144,6 @@
             font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
             background: var(--white);
-            /* Prevenir zoom en iOS */
-            font-size: 16px;
-            /* Mejorar compatibilidad móvil */
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
@@ -284,14 +281,11 @@
             box-shadow: var(--shadow);
             position: relative;
             margin-bottom: 16px;
-            /* Mejores toques en móvil */
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
-            /* Prevenir doble-tap zoom */
-            -ms-touch-action: manipulation;
         }
 
         .record-btn:hover, .record-btn:active {
@@ -338,7 +332,6 @@
             text-align: left;
             transition: all 0.3s ease;
             font-size: 14px;
-            /* Permitir selección en el transcript */
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
@@ -430,7 +423,6 @@
             font-weight: 500;
         }
 
-        /* Responsive específico para móviles */
         @media (max-width: 480px) {
             body {
                 padding: 8px;
@@ -470,7 +462,6 @@
             }
         }
 
-        /* Mejoras específicas para Android */
         @media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
             .record-btn {
                 -webkit-transform: translateZ(0);
@@ -478,7 +469,6 @@
             }
         }
 
-        /* Mejoras específicas para iOS Safari */
         @supports (-webkit-touch-callout: none) {
             .record-btn {
                 -webkit-transform: translate3d(0, 0, 0);
@@ -506,16 +496,14 @@
             }
         }
 
-        /* Prevenir comportamientos móviles no deseados */
         input, button {
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
         }
 
-        /* Mejorar contraste para accesibilidad */
         @media (prefers-color-scheme: dark) {
-            /* Aquí podrías añadir un modo oscuro si lo deseas */
+            /* Add dark mode if needed */
         }
     </style>
 </head>
@@ -530,16 +518,12 @@
         </div>
         
         <div class="main-content">
-            <!-- Información del dispositivo -->
             <div id="deviceInfo" class="device-info"></div>
-
-            <!-- Aviso de compatibilidad -->
             <div id="compatibilityWarning" class="compatibility-warning">
                 <i class="fas fa-exclamation-triangle"></i>
                 <span id="warningText">Verificando compatibilidad del dispositivo...</span>
             </div>
 
-            <!-- Sección de configuración del webhook -->
             <div class="config-section">
                 <h3 class="config-title">
                     <i class="fas fa-cog"></i>
@@ -561,7 +545,6 @@
                 </div>
             </div>
 
-            <!-- Instrucciones -->
             <div class="instructions-card">
                 <div class="instructions-header">
                     <div class="icon-wrapper">
@@ -594,7 +577,6 @@
                 </div>
             </div>
 
-            <!-- Sección de grabación -->
             <div class="recording-section">
                 <button id="recordButton" class="record-btn">
                     <i class="fas fa-microphone"></i>
@@ -628,7 +610,7 @@
     </footer>
 
     <script>
-        let mediaRecorder;
+        let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
         let wakeLock = null;
@@ -640,67 +622,90 @@
         const transcript = document.getElementById('transcript');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const webhookInput = document.getElementById('webhookUrl');
         const compatibilityWarning = document.getElementById('compatibilityWarning');
         const deviceInfoDiv = document.getElementById('deviceInfo');
         const warningText = document.getElementById('warningText');
 
-        // Detectar dispositivo y navegador
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.style.display = 'flex';
+            errorMessage.classList.add('fade-in');
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+                errorMessage.classList.remove('fade-in');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            successMessage.querySelector('span').textContent = message;
+            successMessage.style.display = 'flex';
+            successMessage.classList.add('fade-in');
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+                successMessage.classList.remove('fade-in');
+            }, 5000);
+        }
+
+        function clearMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            transcript.textContent = 'Tu mensaje de voz aparecerá aquí...';
+            transcript.classList.remove('has-content');
+        }
+
         function detectDevice() {
             const ua = navigator.userAgent;
-            const isIOS = /iPad|iPhone|iPod/.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
             const isAndroid = /Android/.test(ua);
             const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua);
-            const isChrome = /Chrome/.test(ua);
+            const isChrome = /Chrome/.test(ua) && !/Edge/.test(ua);
             const isFirefox = /Firefox/.test(ua);
+            const isEdge = /Edge/.test(ua);
             const isSecure = location.protocol === 'https:';
-            
+
             deviceInfo = {
                 isIOS,
                 isAndroid,
                 isSafari,
                 isChrome,
                 isFirefox,
+                isEdge,
                 isSecure,
                 isMobile: isIOS || isAndroid,
                 userAgent: ua
             };
 
-            // Mostrar información del dispositivo (solo en desarrollo)
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 deviceInfoDiv.style.display = 'block';
-                deviceInfoDiv.textContent = `${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'} | ${isSafari ? 'Safari' : isChrome ? 'Chrome' : isFirefox ? 'Firefox' : 'Otro'} | ${isSecure ? 'HTTPS' : 'HTTP'}`;
+                deviceInfoDiv.textContent = `${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'} | ${isSafari ? 'Safari' : isChrome ? 'Chrome' : isFirefox ? 'Firefox' : isEdge ? 'Edge' : 'Otro'} | ${isSecure ? 'HTTPS' : 'HTTP'}`;
             }
 
             return deviceInfo;
         }
 
-        // Verificar compatibilidad completa
         function checkCompatibility() {
             const device = detectDevice();
             let warnings = [];
             let isCompatible = true;
 
-            // Verificar MediaRecorder
             if (!window.MediaRecorder) {
                 warnings.push('Tu navegador no soporta grabación de audio');
                 isCompatible = false;
             }
 
-            // Verificar getUserMedia
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 warnings.push('Tu navegador no puede acceder al micrófono');
                 isCompatible = false;
             }
 
-            // Verificar HTTPS en móviles
             if (device.isMobile && !device.isSecure) {
                 warnings.push('Necesitas HTTPS para usar el micrófono en móviles');
                 isCompatible = false;
             }
 
-            // Advertencias específicas por dispositivo
             if (device.isIOS && !device.isSafari) {
                 warnings.push('Para mejor compatibilidad en iOS, usa Safari');
             }
@@ -709,11 +714,10 @@
                 warnings.push('Firefox en Android puede tener limitaciones de audio');
             }
 
-            // Mostrar advertencias si las hay
             if (warnings.length > 0) {
                 compatibilityWarning.style.display = 'flex';
                 warningText.textContent = warnings[0];
-                
+
                 if (!isCompatible) {
                     recordButton.disabled = true;
                     recordButton.style.opacity = '0.5';
@@ -726,144 +730,126 @@
             return isCompatible;
         }
 
-        // Obtener tipos MIME soportados según dispositivo
         function getSupportedMimeTypes() {
             const device = detectDevice();
             let supportedTypes = [];
 
             if (device.isIOS) {
-                // iOS Safari soporta principalmente MP4
                 supportedTypes = [
+                    'audio/mp4;codecs=mp4a.40.2',
                     'audio/mp4',
                     'audio/wav',
                     'audio/aac'
                 ];
             } else if (device.isAndroid) {
-                // Android soporta más formatos
                 supportedTypes = [
-                    'audio/webm',
                     'audio/webm;codecs=opus',
+                    'audio/webm',
                     'audio/mp4',
-                    'audio/wav',
-                    'audio/ogg'
+                    'audio/ogg;codecs=opus',
+                    'audio/wav'
                 ];
             } else {
-                // Desktop - probar todos
                 supportedTypes = [
                     'audio/webm;codecs=opus',
                     'audio/webm',
                     'audio/mp4',
-                    'audio/wav',
-                    'audio/ogg'
+                    'audio/ogg;codecs=opus',
+                    'audio/wav'
                 ];
             }
 
-            // Filtrar solo los realmente soportados
-            return supportedTypes.filter(type => {
+            const supported = supportedTypes.filter(type => {
                 try {
-                    return MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type);
+                    return MediaRecorder.isTypeSupported(type);
                 } catch (e) {
                     return false;
                 }
             });
+
+            return supported.length > 0 ? supported : ['audio/webm'];
         }
 
-        // Gestión mejorada de permisos multiplataforma
         async function requestMicrophonePermission() {
             try {
-                console.log('Solicitando permisos de micrófono...');
-                
-                // Configuración específica por dispositivo
                 const device = detectDevice();
                 let audioConstraints = {
                     echoCancellation: true,
-                    noiseSuppression: true
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: 1
                 };
 
-                // Configuraciones específicas para iOS
                 if (device.isIOS) {
                     audioConstraints = {
                         ...audioConstraints,
-                        autoGainControl: false, // iOS maneja esto automáticamente
-                        sampleRate: 44100 // Preferido en iOS
+                        sampleRate: 44100,
+                        sampleSize: 16
                     };
-                }
-
-                // Configuraciones específicas para Android
-                if (device.isAndroid) {
+                } else if (device.isAndroid) {
                     audioConstraints = {
                         ...audioConstraints,
-                        autoGainControl: true,
                         googEchoCancellation: true,
-                        googNoiseSuppression: true
+                        googNoiseSuppression: true,
+                        googAutoGainControl: true
                     };
                 }
 
-                const testStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: audioConstraints 
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: audioConstraints
                 });
-                
-                console.log('Permisos concedidos');
-                testStream.getTracks().forEach(track => track.stop());
+
+                console.log('Permisos de micrófono concedidos');
                 return true;
-                
             } catch (error) {
-                console.error('Error requesting microphone permission:', error);
+                console.error('Error al solicitar permisos:', error);
                 handleMicrophoneError(error);
                 return false;
             }
         }
 
-        // Manejo de errores específico por dispositivo
         function handleMicrophoneError(error) {
             const device = detectDevice();
             let errorMessage = 'Error al acceder al micrófono.';
-            
+
             switch (error.name) {
                 case 'NotAllowedError':
-                    if (device.isIOS) {
-                        errorMessage = 'Permisos denegados. Ve a Configuración > Safari > Cámara y Micrófono > Permitir.';
-                    } else if (device.isAndroid) {
-                        errorMessage = 'Permisos denegados. Ve a Configuración > Aplicaciones > Navegador > Permisos > Micrófono.';
-                    } else {
-                        errorMessage = 'Permisos denegados. Haz clic en el icono del micrófono en la barra de direcciones.';
-                    }
+                    errorMessage = device.isIOS
+                        ? 'Permisos denegados. Ve a Configuración > Safari > Micrófono > Permitir.'
+                        : device.isAndroid
+                            ? 'Permisos denegados. Ve a Configuración > Aplicaciones > Navegador > Permisos > Micrófono.'
+                            : 'Permisos denegados. Haz clic en el icono del micrófono en la barra de direcciones.';
                     break;
                 case 'NotFoundError':
-                    errorMessage = 'No se encontró micrófono disponible en el dispositivo.';
+                    errorMessage = 'No se encontró micrófono disponible.';
                     break;
                 case 'NotReadableError':
-                    if (device.isIOS) {
-                        errorMessage = 'El micrófono está siendo usado por otra app. Cierra otras aplicaciones.';
-                    } else {
-                        errorMessage = 'El micrófono está en uso por otra aplicación.';
-                    }
+                    errorMessage = device.isIOS
+                        ? 'El micrófono está en uso por otra app. Cierra otras aplicaciones.'
+                        : 'El micrófono está en uso por otra aplicación.';
                     break;
                 case 'NotSupportedError':
                     errorMessage = `Tu navegador (${device.isSafari ? 'Safari' : device.isChrome ? 'Chrome' : 'Firefox'}) no soporta grabación de audio.`;
                     break;
                 case 'SecurityError':
-                    if (!device.isSecure && device.isMobile) {
-                        errorMessage = 'Necesitas HTTPS para usar el micrófono. Accede desde una URL segura.';
-                    } else {
-                        errorMessage = 'Acceso denegado por razones de seguridad.';
-                    }
+                    errorMessage = device.isMobile && !device.isSecure
+                        ? 'Necesitas HTTPS para usar el micrófono. Accede desde una URL segura.'
+                        : 'Acceso denegado por razones de seguridad.';
                     break;
                 case 'AbortError':
                     errorMessage = 'Operación cancelada por el usuario.';
                     break;
                 default:
-                    if (device.isIOS && device.isSafari) {
-                        errorMessage = 'Error de Safari iOS. Prueba reiniciar el navegador o el dispositivo.';
-                    } else if (device.isAndroid) {
-                        errorMessage = 'Error de Android. Verifica que el micrófono funcione en otras aplicaciones.';
-                    }
+                    errorMessage = device.isIOS && device.isSafari
+                        ? 'Error de Safari iOS. Prueba reiniciar el navegador o el dispositivo.'
+                        : device.isAndroid
+                            ? 'Error de Android. Verifica que el micrófono funcione en otras aplicaciones.'
+                            : 'Error desconocido al acceder al micrófono.';
             }
-            
+
             showError(errorMessage);
         }
 
-        // Función para validar URL
         function isValidUrl(string) {
             try {
                 const url = new URL(string);
@@ -873,13 +859,146 @@
             }
         }
 
-        // Event listeners
-        recordButton.addEventListener('click', toggleRecording);
-        recordButton.addEventListener('touchstart', function(e) {
-            e.preventDefault(); // Prevenir comportamientos táctiles no deseados
-        });
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake lock activado');
+                } else {
+                    console.warn('Wake lock no soportado por el navegador');
+                }
+            } catch (err) {
+                console.error('Error al solicitar wake lock:', err);
+            }
+        }
 
-        function toggleRecording() {
+        async function releaseWakeLock() {
+            if (wakeLock) {
+                try {
+                    await wakeLock.release();
+                    wakeLock = null;
+                    console.log('Wake lock liberado');
+                } catch (err) {
+                    console.error('Error al liberar wake lock:', err);
+                }
+            }
+        }
+
+        async function startRecording() {
+            try {
+                if (!webhookInput.value.trim() || !isValidUrl(webhookInput.value.trim())) {
+                    showError('Por favor, introduce una URL de webhook válida');
+                    return;
+                }
+
+                clearMessages();
+
+                if (!await requestMicrophonePermission()) {
+                    return;
+                }
+
+                await requestWakeLock();
+
+                const mimeTypes = getSupportedMimeTypes();
+                const mimeType = mimeTypes[0];
+
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    showError('No se encontraron formatos de audio compatibles');
+                    stopMediaTracks();
+                    return;
+                }
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType });
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    await sendAudioToWebhook(audioBlob);
+                    stopMediaTracks();
+                    await releaseWakeLock();
+                };
+
+                mediaRecorder.onerror = (event) => {
+                    console.error('Error en MediaRecorder:', event.error);
+                    handleMicrophoneError(event.error);
+                    stopRecording();
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.classList.add('recording');
+                statusText.textContent = 'Grabando...';
+            } catch (error) {
+                console.error('Error al iniciar grabación:', error);
+                handleMicrophoneError(error);
+                stopMediaTracks();
+                await releaseWakeLock();
+            }
+        }
+
+        function stopMediaTracks() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        async function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordButton.classList.remove('recording');
+                statusText.textContent = 'Procesando...';
+                loadingSpinner.style.display = 'block';
+            }
+        }
+
+        async function sendAudioToWebhook(audioBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, `recording.${audioBlob.type.split('/')[1]}`);
+
+                const response = await fetch(webhookInput.value.trim(), {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    throw new Error('La respuesta del webhook no es JSON válido');
+                }
+
+                transcript.textContent = result.transcript || 'Transcripción no disponible';
+                transcript.classList.add('has-content');
+                statusText.textContent = 'Procesamiento completado';
+                showSuccess('¡Evento programado correctamente!');
+            } catch (error) {
+                console.error('Error al enviar audio:', error);
+                showError(`Error al procesar el audio: ${error.message}`);
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        function toggleRecording(event) {
+            if (event) {
+                event.preventDefault();
+            }
             if (isRecording) {
                 stopRecording();
             } else {
@@ -887,15 +1006,27 @@
             }
         }
 
-        async function startRecording() {
-            try {
-                // Verificar URL webhook
-                if (!webhookInput.value.trim() || !isValidUrl(webhookInput.value.trim())) {
-                    showError('Por favor, introduce una URL de webhook válida');
-                    return;
-                }
+        function setupEventListeners() {
+            recordButton.addEventListener('click', toggleRecording);
+            recordButton.addEventListener('touchstart', toggleRecording, { passive: false });
 
-                clearMessages();
-                
-                // Solicitar permisos explícitamente
-                const hasPermission = await request
+            window.addEventListener('load', () => {
+                if (checkCompatibility()) {
+                    statusText.textContent = 'Toca el micrófono para comenzar';
+                }
+            });
+
+            window.addEventListener('beforeunload', cleanup);
+        }
+
+        function cleanup() {
+            stopMediaTracks();
+            releaseWakeLock();
+            recordButton.removeEventListener('click', toggleRecording);
+            recordButton.removeEventListener('touchstart', toggleRecording);
+        }
+
+        setupEventListeners();
+    </script>
+</body>
+</html>
