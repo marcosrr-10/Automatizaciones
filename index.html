@@ -789,13 +789,15 @@
 
                 stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
-                // Initialize Web Audio API
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = audioContext.createMediaStreamSource(stream);
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = 1.0;
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                // Initialize Web Audio API only if needed
+                if (window.AudioContext || window.webkitAudioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    const gainNode = audioContext.createGain();
+                    gainNode.gain.value = 1.0;
+                    source.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                }
 
                 console.log('Permisos de micrófono concedidos');
                 return true;
@@ -930,7 +932,7 @@
                     audioDownload.download = `recording.${mimeType.split('/')[1]}`;
                     downloadLink.style.display = 'block';
 
-                    // Convert to WAV if necessary
+                    // Convert to WAV only if necessary and AudioContext is available
                     if (audioContext && mimeType !== 'audio/wav') {
                         try {
                             audioBlob = await convertToWav(audioBlob);
@@ -940,8 +942,8 @@
                             audioDownload.href = wavUrl;
                             audioDownload.download = 'recording.wav';
                         } catch (e) {
-                            console.error('Error convirtiendo a WAV:', e);
-                            showError('Error al convertir el audio a WAV');
+                            console.warn('No se pudo convertir a WAV, usando formato original:', e.message);
+                            // Continúa con el formato original si falla la conversión
                         }
                     }
 
@@ -956,7 +958,7 @@
                     stopRecording();
                 };
 
-                mediaRecorder.start(1000); // Timeslice for better data handling
+                mediaRecorder.start(1000); // Timeslice para mejor manejo de datos
                 isRecording = true;
                 recordButton.classList.add('recording');
                 statusText.textContent = 'Grabando...';
@@ -1070,18 +1072,19 @@
                     throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
                 }
 
-                let result;
+                let result = {};
                 try {
-                    result = await response.json();
+                    const text = await response.text();
+                    if (text) {
+                        result = JSON.parse(text);
+                    }
                 } catch (e) {
-                    throw new Error('La respuesta del webhook no es JSON válido: ' + e.message);
+                    console.warn('La respuesta del webhook no es JSON válido:', e.message);
+                    // No mostrar error si el audio se grabó correctamente
+                    result = { transcript: 'Transcripción no disponible' };
                 }
 
-                if (!result.transcript) {
-                    throw new Error('El webhook no devolvió una transcripción válida');
-                }
-
-                transcript.textContent = result.transcript;
+                transcript.textContent = result.transcript || 'Transcripción no disponible';
                 transcript.classList.add('has-content');
                 statusText.textContent = 'Procesamiento completado';
                 showSuccess('¡Evento programado correctamente!');
