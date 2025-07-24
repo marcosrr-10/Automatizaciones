@@ -615,6 +615,7 @@
         let isRecording = false;
         let wakeLock = null;
         let stream = null;
+        let audioContext = null;
         let deviceInfo = {};
 
         const recordButton = document.getElementById('recordButton');
@@ -701,6 +702,11 @@
                 isCompatible = false;
             }
 
+            if (!window.AudioContext && !window.webkitAudioContext) {
+                warnings.push('Tu navegador no soporta el procesamiento de audio necesario');
+                isCompatible = false;
+            }
+
             if (device.isMobile && !device.isSecure) {
                 warnings.push('Necesitas HTTPS para usar el micrófono en móviles');
                 isCompatible = false;
@@ -731,35 +737,16 @@
         }
 
         function getSupportedMimeTypes() {
-            const device = detectDevice();
-            let supportedTypes = [];
+            const mimeTypes = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/mp4;codecs=mp4a.40.2',
+                'audio/mp4',
+                'audio/ogg;codecs=opus',
+                'audio/wav'
+            ];
 
-            if (device.isIOS) {
-                supportedTypes = [
-                    'audio/mp4;codecs=mp4a.40.2',
-                    'audio/mp4',
-                    'audio/wav',
-                    'audio/aac'
-                ];
-            } else if (device.isAndroid) {
-                supportedTypes = [
-                    'audio/webm;codecs=opus',
-                    'audio/webm',
-                    'audio/mp4',
-                    'audio/ogg;codecs=opus',
-                    'audio/wav'
-                ];
-            } else {
-                supportedTypes = [
-                    'audio/webm;codecs=opus',
-                    'audio/webm',
-                    'audio/mp4',
-                    'audio/ogg;codecs=opus',
-                    'audio/wav'
-                ];
-            }
-
-            const supported = supportedTypes.filter(type => {
+            const supported = mimeTypes.filter(type => {
                 try {
                     return MediaRecorder.isTypeSupported(type);
                 } catch (e) {
@@ -777,27 +764,32 @@
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true,
-                    channelCount: 1
+                    channelCount: 1,
+                    sampleRate: { ideal: 44100 }
                 };
 
                 if (device.isIOS) {
                     audioConstraints = {
                         ...audioConstraints,
-                        sampleRate: 44100,
+                        sampleRate: { ideal: 44100, min: 16000 },
                         sampleSize: 16
                     };
                 } else if (device.isAndroid) {
                     audioConstraints = {
                         ...audioConstraints,
-                        googEchoCancellation: true,
-                        googNoiseSuppression: true,
-                        googAutoGainControl: true
+                        sampleRate: { ideal: 44100, min: 16000 }
                     };
                 }
 
-                stream = await navigator.mediaDevices.getUserMedia({
-                    audio: audioConstraints
-                });
+                stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+
+                // Initialize Web Audio API
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 1.0;
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
 
                 console.log('Permisos de micrófono concedidos');
                 return true;
@@ -900,7 +892,14 @@
                 await requestWakeLock();
 
                 const mimeTypes = getSupportedMimeTypes();
-                const mimeType = mimeTypes[0];
+                let mimeType = mimeTypes[0];
+
+                // Fallback to WAV for broader compatibility
+                if (mimeTypes.includes('audio/wav')) {
+                    mimeType = 'audio/wav';
+                } else if (mimeTypes.includes('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                }
 
                 if (!MediaRecorder.isTypeSupported(mimeType)) {
                     showError('No se encontraron formatos de audio compatibles');
@@ -918,7 +917,17 @@
                 };
 
                 mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    let audioBlob = new Blob(audioChunks, { type: mimeType });
+
+                    // Convert to WAV if necessary for better compatibility
+                    if (audioContext && mimeType !== 'audio/wav') {
+                        try {
+                            audioBlob = await convertToWav(audioBlob);
+                        } catch (e) {
+                            console.error('Error converting to WAV:', e);
+                        }
+                    }
+
                     await sendAudioToWebhook(audioBlob);
                     stopMediaTracks();
                     await releaseWakeLock();
@@ -930,7 +939,7 @@
                     stopRecording();
                 };
 
-                mediaRecorder.start();
+                mediaRecorder.start(1000); // Timeslice for better data handling
                 isRecording = true;
                 recordButton.classList.add('recording');
                 statusText.textContent = 'Grabando...';
@@ -942,10 +951,67 @@
             }
         }
 
+        async function convertToWav(audioBlob) {
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            const wavBuffer = audioBufferToWav(audioBuffer);
+            return new Blob([wavBuffer], { type: 'audio/wav' });
+        }
+
+        function audioBufferToWav(audioBuffer) {
+            const numChannels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const length = audioBuffer.length * numChannels * 2 + 44;
+            const buffer = new ArrayBuffer(length);
+            const view = new DataView(buffer);
+            const channels = [];
+
+            // Write WAV header
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            let offset = 0;
+            writeString(view, offset, 'RIFF'); offset += 4;
+            view.setUint32(offset, 36 + audioBuffer.length * 2, true); offset += 4;
+            writeString(view, offset, 'WAVE'); offset += 4;
+            writeString(view, offset, 'fmt '); offset += 4;
+            view.setUint32(offset, 16, true); offset += 4;
+            view.setUint16(offset, 1, true); offset += 2;
+            view.setUint16(offset, numChannels, true); offset += 2;
+            view.setUint32(offset, sampleRate, true); offset += 4;
+            view.setUint32(offset, sampleRate * numChannels * 2, true); offset += 4;
+            view.setUint16(offset, numChannels * 2, true); offset += 2;
+            view.setUint16(offset, 16, true); offset += 2;
+            writeString(view, offset, 'data'); offset += 4;
+            view.setUint32(offset, audioBuffer.length * numChannels * 2, true); offset += 4;
+
+            // Write PCM data
+            for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+                channels.push(audioBuffer.getChannelData(i));
+            }
+
+            for (let i = 0; i < audioBuffer.length; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    const sample = Math.max(-1, Math.min(1, channels[channel][i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+
+            return buffer;
+        }
+
         function stopMediaTracks() {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
             }
         }
 
@@ -962,7 +1028,8 @@
         async function sendAudioToWebhook(audioBlob) {
             try {
                 const formData = new FormData();
-                formData.append('audio', audioBlob, `recording.${audioBlob.type.split('/')[1]}`);
+                const extension = audioBlob.type === 'audio/wav' ? 'wav' : audioBlob.type.split('/')[1];
+                formData.append('audio', audioBlob, `recording.${extension}`);
 
                 const response = await fetch(webhookInput.value.trim(), {
                     method: 'POST',
@@ -996,9 +1063,8 @@
         }
 
         function toggleRecording(event) {
-            if (event) {
-                event.preventDefault();
-            }
+            event.preventDefault();
+            event.stopPropagation();
             if (isRecording) {
                 stopRecording();
             } else {
