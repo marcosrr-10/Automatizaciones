@@ -410,6 +410,18 @@
             display: none;
         }
 
+        .download-link {
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .download-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
         .footer {
             padding: 16px;
             text-align: center;
@@ -572,7 +584,7 @@
                         <span>Ejemplo:</span>
                     </div>
                     <div class="example-box">
-                        <p class="example-text">"Evento: Reunión con Ana, Dia: jueves, Fecha: 25 de julio, Hora: 11"</p>
+                        <p class="example-text">"Evento: Reunión con Ana, Día: jueves, Fecha: 25 de julio, Hora: 11"</p>
                     </div>
                 </div>
             </div>
@@ -600,6 +612,10 @@
                 <div id="errorMessage" class="error-alert">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span id="errorText">Error al procesar la solicitud</span>
+                </div>
+
+                <div id="downloadLink" class="download-link">
+                    <a href="#" id="audioDownload">Descargar audio grabado</a>
                 </div>
             </div>
         </div>
@@ -629,6 +645,8 @@
         const compatibilityWarning = document.getElementById('compatibilityWarning');
         const deviceInfoDiv = document.getElementById('deviceInfo');
         const warningText = document.getElementById('warningText');
+        const downloadLink = document.getElementById('downloadLink');
+        const audioDownload = document.getElementById('audioDownload');
 
         function showError(message) {
             errorText.textContent = message;
@@ -655,6 +673,7 @@
             successMessage.style.display = 'none';
             transcript.textContent = 'Tu mensaje de voz aparecerá aquí...';
             transcript.classList.remove('has-content');
+            downloadLink.style.display = 'none';
         }
 
         function detectDevice() {
@@ -738,12 +757,12 @@
 
         function getSupportedMimeTypes() {
             const mimeTypes = [
-                'audio/webm;codecs=opus',
-                'audio/webm',
+                'audio/wav',
                 'audio/mp4;codecs=mp4a.40.2',
                 'audio/mp4',
-                'audio/ogg;codecs=opus',
-                'audio/wav'
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus'
             ];
 
             const supported = mimeTypes.filter(type => {
@@ -754,7 +773,7 @@
                 }
             });
 
-            return supported.length > 0 ? supported : ['audio/webm'];
+            return supported.length > 0 ? supported : ['audio/wav'];
         }
 
         async function requestMicrophonePermission() {
@@ -765,21 +784,8 @@
                     noiseSuppression: true,
                     autoGainControl: true,
                     channelCount: 1,
-                    sampleRate: { ideal: 44100 }
+                    sampleRate: { ideal: 44100, min: 16000 }
                 };
-
-                if (device.isIOS) {
-                    audioConstraints = {
-                        ...audioConstraints,
-                        sampleRate: { ideal: 44100, min: 16000 },
-                        sampleSize: 16
-                    };
-                } else if (device.isAndroid) {
-                    audioConstraints = {
-                        ...audioConstraints,
-                        sampleRate: { ideal: 44100, min: 16000 }
-                    };
-                }
 
                 stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
@@ -892,20 +898,19 @@
                 await requestWakeLock();
 
                 const mimeTypes = getSupportedMimeTypes();
-                let mimeType = mimeTypes[0];
+                let mimeType = 'audio/wav'; // Default to WAV for maximum compatibility
 
-                // Fallback to WAV for broader compatibility
-                if (mimeTypes.includes('audio/wav')) {
-                    mimeType = 'audio/wav';
-                } else if (mimeTypes.includes('audio/mp4')) {
-                    mimeType = 'audio/mp4';
+                if (!mimeTypes.includes('audio/wav') && mimeTypes.length > 0) {
+                    mimeType = mimeTypes[0]; // Fallback to first supported type
                 }
 
                 if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    showError('No se encontraron formatos de audio compatibles');
+                    showError(`Formato de audio ${mimeType} no compatible`);
                     stopMediaTracks();
                     return;
                 }
+
+                console.log(`Usando MIME type: ${mimeType}`);
 
                 mediaRecorder = new MediaRecorder(stream, { mimeType });
                 audioChunks = [];
@@ -919,12 +924,24 @@
                 mediaRecorder.onstop = async () => {
                     let audioBlob = new Blob(audioChunks, { type: mimeType });
 
-                    // Convert to WAV if necessary for better compatibility
+                    // Add download link for debugging
+                    const url = URL.createObjectURL(audioBlob);
+                    audioDownload.href = url;
+                    audioDownload.download = `recording.${mimeType.split('/')[1]}`;
+                    downloadLink.style.display = 'block';
+
+                    // Convert to WAV if necessary
                     if (audioContext && mimeType !== 'audio/wav') {
                         try {
                             audioBlob = await convertToWav(audioBlob);
+                            console.log('Audio convertido a WAV');
+                            // Update download link for WAV
+                            const wavUrl = URL.createObjectURL(audioBlob);
+                            audioDownload.href = wavUrl;
+                            audioDownload.download = 'recording.wav';
                         } catch (e) {
-                            console.error('Error converting to WAV:', e);
+                            console.error('Error convirtiendo a WAV:', e);
+                            showError('Error al convertir el audio a WAV');
                         }
                     }
 
@@ -952,10 +969,14 @@
         }
 
         async function convertToWav(audioBlob) {
-            const arrayBuffer = await audioBlob.arrayBuffer();
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            const wavBuffer = audioBufferToWav(audioBuffer);
-            return new Blob([wavBuffer], { type: 'audio/wav' });
+            try {
+                const arrayBuffer = await audioBlob.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                const wavBuffer = audioBufferToWav(audioBuffer);
+                return new Blob([wavBuffer], { type: 'audio/wav' });
+            } catch (e) {
+                throw new Error('Fallo en la conversión a WAV: ' + e.message);
+            }
         }
 
         function audioBufferToWav(audioBuffer) {
@@ -1031,32 +1052,46 @@
                 const extension = audioBlob.type === 'audio/wav' ? 'wav' : audioBlob.type.split('/')[1];
                 formData.append('audio', audioBlob, `recording.${extension}`);
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
                 const response = await fetch(webhookInput.value.trim(), {
                     method: 'POST',
                     body: formData,
                     headers: {
                         'Accept': 'application/json'
-                    }
+                    },
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
+
                 if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
+                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
                 }
 
                 let result;
                 try {
                     result = await response.json();
                 } catch (e) {
-                    throw new Error('La respuesta del webhook no es JSON válido');
+                    throw new Error('La respuesta del webhook no es JSON válido: ' + e.message);
                 }
 
-                transcript.textContent = result.transcript || 'Transcripción no disponible';
+                if (!result.transcript) {
+                    throw new Error('El webhook no devolvió una transcripción válida');
+                }
+
+                transcript.textContent = result.transcript;
                 transcript.classList.add('has-content');
                 statusText.textContent = 'Procesamiento completado';
                 showSuccess('¡Evento programado correctamente!');
             } catch (error) {
                 console.error('Error al enviar audio:', error);
-                showError(`Error al procesar el audio: ${error.message}`);
+                if (error.name === 'AbortError') {
+                    showError('La solicitud al webhook excedió el tiempo límite (10 segundos)');
+                } else {
+                    showError(`Error al procesar el audio: ${error.message}`);
+                }
             } finally {
                 loadingSpinner.style.display = 'none';
             }
