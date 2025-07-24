@@ -433,6 +433,32 @@
             color: var(--primary);
             text-decoration: none;
             font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: var(--primary-dark);
+        }
+
+        .footer-legal {
+            margin-top: 8px;
+            font-size: 11px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .footer-legal a {
+            color: var(--gray);
+        }
+
+        .footer-legal a:hover {
+            color: var(--primary);
+        }
+
+        .footer-legal .separator {
+            color: var(--gray);
         }
 
         @media (max-width: 480px) {
@@ -471,6 +497,11 @@
                 width: 70px;
                 height: 70px;
                 font-size: 28px;
+            }
+
+            .footer-legal {
+                flex-direction: column;
+                gap: 8px;
             }
         }
 
@@ -623,6 +654,11 @@
 
     <footer class="footer">
         <p>Desarrollado con <i class="fas fa-heart"></i> por el equipo de Calendario por Voz</p>
+        <div class="footer-legal">
+            <a href="#">Aviso Legal</a>
+            <span class="separator">•</span>
+            <a href="#">Política de Privacidad</a>
+        </div>
     </footer>
 
     <script>
