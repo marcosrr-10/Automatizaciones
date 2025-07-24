@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Calendario por Voz</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -42,11 +42,15 @@
             color: var(--dark);
             /* Prevenir zoom en iOS */
             -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
             /* Prevenir selección accidental */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+            /* Mejorar rendimiento en móviles */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
         }
 
         .main-container {
@@ -142,6 +146,10 @@
             background: var(--white);
             /* Prevenir zoom en iOS */
             font-size: 16px;
+            /* Mejorar compatibilidad móvil */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .webhook-input:focus {
@@ -279,10 +287,21 @@
             /* Mejores toques en móvil */
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            /* Prevenir doble-tap zoom */
+            -ms-touch-action: manipulation;
         }
 
         .record-btn:hover, .record-btn:active {
             transform: scale(0.95);
+        }
+
+        .record-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .record-btn.recording {
@@ -372,7 +391,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        .https-warning {
+        .compatibility-warning {
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             border: 1px solid var(--warning);
             color: #92400e;
@@ -384,6 +403,18 @@
             gap: 12px;
             font-weight: 500;
             font-size: 14px;
+        }
+
+        .device-info {
+            background: #e0f2fe;
+            border: 1px solid #0288d1;
+            color: #01579b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
         }
 
         .footer {
@@ -439,6 +470,27 @@
             }
         }
 
+        /* Mejoras específicas para Android */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
+            .record-btn {
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+            }
+        }
+
+        /* Mejoras específicas para iOS Safari */
+        @supports (-webkit-touch-callout: none) {
+            .record-btn {
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+            }
+            
+            .webhook-input {
+                -webkit-border-radius: 8px;
+                border-radius: 8px;
+            }
+        }
+
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
@@ -478,10 +530,13 @@
         </div>
         
         <div class="main-content">
-            <!-- Aviso HTTPS -->
-            <div id="httpsWarning" class="https-warning">
+            <!-- Información del dispositivo -->
+            <div id="deviceInfo" class="device-info"></div>
+
+            <!-- Aviso de compatibilidad -->
+            <div id="compatibilityWarning" class="compatibility-warning">
                 <i class="fas fa-exclamation-triangle"></i>
-                <span>Para usar el micrófono en móviles, necesitas acceder desde HTTPS</span>
+                <span id="warningText">Verificando compatibilidad del dispositivo...</span>
             </div>
 
             <!-- Sección de configuración del webhook -->
@@ -577,6 +632,8 @@
         let audioChunks = [];
         let isRecording = false;
         let wakeLock = null;
+        let stream = null;
+        let deviceInfo = {};
 
         const recordButton = document.getElementById('recordButton');
         const statusText = document.getElementById('statusText');
@@ -585,44 +642,242 @@
         const errorMessage = document.getElementById('errorMessage');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const webhookInput = document.getElementById('webhookUrl');
-        const httpsWarning = document.getElementById('httpsWarning');
+        const compatibilityWarning = document.getElementById('compatibilityWarning');
+        const deviceInfoDiv = document.getElementById('deviceInfo');
+        const warningText = document.getElementById('warningText');
 
-        // Verificar HTTPS en móviles
-        function checkHTTPS() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (isMobile && location.protocol !== 'https:') {
-                httpsWarning.style.display = 'flex';
-                recordButton.disabled = true;
-                recordButton.style.opacity = '0.5';
-                return false;
+        // Detectar dispositivo y navegador
+        function detectDevice() {
+            const ua = navigator.userAgent;
+            const isIOS = /iPad|iPhone|iPod/.test(ua);
+            const isAndroid = /Android/.test(ua);
+            const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua);
+            const isChrome = /Chrome/.test(ua);
+            const isFirefox = /Firefox/.test(ua);
+            const isSecure = location.protocol === 'https:';
+            
+            deviceInfo = {
+                isIOS,
+                isAndroid,
+                isSafari,
+                isChrome,
+                isFirefox,
+                isSecure,
+                isMobile: isIOS || isAndroid,
+                userAgent: ua
+            };
+
+            // Mostrar información del dispositivo (solo en desarrollo)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                deviceInfoDiv.style.display = 'block';
+                deviceInfoDiv.textContent = `${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'} | ${isSafari ? 'Safari' : isChrome ? 'Chrome' : isFirefox ? 'Firefox' : 'Otro'} | ${isSecure ? 'HTTPS' : 'HTTP'}`;
             }
-            return true;
+
+            return deviceInfo;
         }
 
-        // Gestión mejorada de permisos
+        // Verificar compatibilidad completa
+        function checkCompatibility() {
+            const device = detectDevice();
+            let warnings = [];
+            let isCompatible = true;
+
+            // Verificar MediaRecorder
+            if (!window.MediaRecorder) {
+                warnings.push('Tu navegador no soporta grabación de audio');
+                isCompatible = false;
+            }
+
+            // Verificar getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                warnings.push('Tu navegador no puede acceder al micrófono');
+                isCompatible = false;
+            }
+
+            // Verificar HTTPS en móviles
+            if (device.isMobile && !device.isSecure) {
+                warnings.push('Necesitas HTTPS para usar el micrófono en móviles');
+                isCompatible = false;
+            }
+
+            // Advertencias específicas por dispositivo
+            if (device.isIOS && !device.isSafari) {
+                warnings.push('Para mejor compatibilidad en iOS, usa Safari');
+            }
+
+            if (device.isAndroid && device.isFirefox) {
+                warnings.push('Firefox en Android puede tener limitaciones de audio');
+            }
+
+            // Mostrar advertencias si las hay
+            if (warnings.length > 0) {
+                compatibilityWarning.style.display = 'flex';
+                warningText.textContent = warnings[0];
+                
+                if (!isCompatible) {
+                    recordButton.disabled = true;
+                    recordButton.style.opacity = '0.5';
+                    statusText.textContent = 'Dispositivo no compatible';
+                }
+            } else {
+                compatibilityWarning.style.display = 'none';
+            }
+
+            return isCompatible;
+        }
+
+        // Obtener tipos MIME soportados según dispositivo
+        function getSupportedMimeTypes() {
+            const device = detectDevice();
+            let supportedTypes = [];
+
+            if (device.isIOS) {
+                // iOS Safari soporta principalmente MP4
+                supportedTypes = [
+                    'audio/mp4',
+                    'audio/wav',
+                    'audio/aac'
+                ];
+            } else if (device.isAndroid) {
+                // Android soporta más formatos
+                supportedTypes = [
+                    'audio/webm',
+                    'audio/webm;codecs=opus',
+                    'audio/mp4',
+                    'audio/wav',
+                    'audio/ogg'
+                ];
+            } else {
+                // Desktop - probar todos
+                supportedTypes = [
+                    'audio/webm;codecs=opus',
+                    'audio/webm',
+                    'audio/mp4',
+                    'audio/wav',
+                    'audio/ogg'
+                ];
+            }
+
+            // Filtrar solo los realmente soportados
+            return supportedTypes.filter(type => {
+                try {
+                    return MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type);
+                } catch (e) {
+                    return false;
+                }
+            });
+        }
+
+        // Gestión mejorada de permisos multiplataforma
         async function requestMicrophonePermission() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                stream.getTracks().forEach(track => track.stop()); // Liberar inmediatamente
+                console.log('Solicitando permisos de micrófono...');
+                
+                // Configuración específica por dispositivo
+                const device = detectDevice();
+                let audioConstraints = {
+                    echoCancellation: true,
+                    noiseSuppression: true
+                };
+
+                // Configuraciones específicas para iOS
+                if (device.isIOS) {
+                    audioConstraints = {
+                        ...audioConstraints,
+                        autoGainControl: false, // iOS maneja esto automáticamente
+                        sampleRate: 44100 // Preferido en iOS
+                    };
+                }
+
+                // Configuraciones específicas para Android
+                if (device.isAndroid) {
+                    audioConstraints = {
+                        ...audioConstraints,
+                        autoGainControl: true,
+                        googEchoCancellation: true,
+                        googNoiseSuppression: true
+                    };
+                }
+
+                const testStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: audioConstraints 
+                });
+                
+                console.log('Permisos concedidos');
+                testStream.getTracks().forEach(track => track.stop());
                 return true;
+                
             } catch (error) {
                 console.error('Error requesting microphone permission:', error);
-                
-                let errorMsg = 'No se pudo acceder al micrófono.';
-                if (error.name === 'NotAllowedError') {
-                    errorMsg = 'Permisos de micrófono denegados. Habilítalos en la configuración.';
-                } else if (error.name === 'NotFoundError') {
-                    errorMsg = 'No se encontró micrófono disponible.';
-                } else if (error.name === 'NotSupportedError') {
-                    errorMsg = 'Tu navegador no soporta grabación de audio.';
-                }
-                
-                showError(errorMsg);
+                handleMicrophoneError(error);
                 return false;
             }
         }
 
+        // Manejo de errores específico por dispositivo
+        function handleMicrophoneError(error) {
+            const device = detectDevice();
+            let errorMessage = 'Error al acceder al micrófono.';
+            
+            switch (error.name) {
+                case 'NotAllowedError':
+                    if (device.isIOS) {
+                        errorMessage = 'Permisos denegados. Ve a Configuración > Safari > Cámara y Micrófono > Permitir.';
+                    } else if (device.isAndroid) {
+                        errorMessage = 'Permisos denegados. Ve a Configuración > Aplicaciones > Navegador > Permisos > Micrófono.';
+                    } else {
+                        errorMessage = 'Permisos denegados. Haz clic en el icono del micrófono en la barra de direcciones.';
+                    }
+                    break;
+                case 'NotFoundError':
+                    errorMessage = 'No se encontró micrófono disponible en el dispositivo.';
+                    break;
+                case 'NotReadableError':
+                    if (device.isIOS) {
+                        errorMessage = 'El micrófono está siendo usado por otra app. Cierra otras aplicaciones.';
+                    } else {
+                        errorMessage = 'El micrófono está en uso por otra aplicación.';
+                    }
+                    break;
+                case 'NotSupportedError':
+                    errorMessage = `Tu navegador (${device.isSafari ? 'Safari' : device.isChrome ? 'Chrome' : 'Firefox'}) no soporta grabación de audio.`;
+                    break;
+                case 'SecurityError':
+                    if (!device.isSecure && device.isMobile) {
+                        errorMessage = 'Necesitas HTTPS para usar el micrófono. Accede desde una URL segura.';
+                    } else {
+                        errorMessage = 'Acceso denegado por razones de seguridad.';
+                    }
+                    break;
+                case 'AbortError':
+                    errorMessage = 'Operación cancelada por el usuario.';
+                    break;
+                default:
+                    if (device.isIOS && device.isSafari) {
+                        errorMessage = 'Error de Safari iOS. Prueba reiniciar el navegador o el dispositivo.';
+                    } else if (device.isAndroid) {
+                        errorMessage = 'Error de Android. Verifica que el micrófono funcione en otras aplicaciones.';
+                    }
+            }
+            
+            showError(errorMessage);
+        }
+
+        // Función para validar URL
+        function isValidUrl(string) {
+            try {
+                const url = new URL(string);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch (_) {
+                return false;
+            }
+        }
+
+        // Event listeners
         recordButton.addEventListener('click', toggleRecording);
+        recordButton.addEventListener('touchstart', function(e) {
+            e.preventDefault(); // Prevenir comportamientos táctiles no deseados
+        });
 
         function toggleRecording() {
             if (isRecording) {
@@ -633,215 +888,14 @@
         }
 
         async function startRecording() {
-            // Verificar URL webhook
-            if (!webhookInput.value.trim() || !isValidUrl(webhookInput.value.trim())) {
-                showError('Por favor, introduce una URL de webhook válida');
-                return;
-            }
-
             try {
+                // Verificar URL webhook
+                if (!webhookInput.value.trim() || !isValidUrl(webhookInput.value.trim())) {
+                    showError('Por favor, introduce una URL de webhook válida');
+                    return;
+                }
+
                 clearMessages();
                 
                 // Solicitar permisos explícitamente
-                const hasPermission = await requestMicrophonePermission();
-                if (!hasPermission) return;
-
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-    audio: {
-        echoCancellation: true,
-        noiseSuppression: true
-    } 
-});
-
-                const supportedTypes = [
-    'audio/mp4',           
-    'audio/wav',           
-    'audio/webm',     
-    'audio/webm;codecs=opus'  
-];
-                for (const type of supportedTypes) {
-                    if (MediaRecorder.isTypeSupported(type)) {
-                        options = { mimeType: type };
-                        break;
-                    }
-                }
-
-                mediaRecorder = new MediaRecorder(stream, options);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { 
-                        type: mediaRecorder.mimeType || 'audio/webm' 
-                    });
-                    await sendAudioToWebhook(audioBlob);
-                    
-                    // Liberar wake lock
-                    if (wakeLock) {
-                        wakeLock.release();
-                        wakeLock = null;
-                    }
-                };
-
-                mediaRecorder.onerror = (event) => {
-                    console.error('Error en MediaRecorder:', event.error);
-                    showError('Error al grabar el audio. Inténtalo de nuevo.');
-                    
-                    if (wakeLock) {
-                        wakeLock.release();
-                        wakeLock = null;
-                    }
-                };
-
-                mediaRecorder.start(1000);
-                isRecording = true;
-                
-                recordButton.classList.add('recording');
-                recordButton.innerHTML = '<i class="fas fa-stop"></i>';
-                statusText.textContent = 'Grabando... Toca para detener';
-                transcript.textContent = 'Escuchando tu mensaje...';
-                transcript.classList.remove('has-content');
-                
-            } catch (error) {
-                console.error('Error al iniciar grabación:', error);
-                handleMicrophoneError(error);
-                
-                if (wakeLock) {
-                    wakeLock.release();
-                    wakeLock = null;
-                }
-            }
-        }
-
-        function handleMicrophoneError(error) {
-            let errorMessage = 'Error al acceder al micrófono.';
-            
-            switch (error.name) {
-                case 'NotAllowedError':
-                    errorMessage = 'Permisos denegados. Ve a Configuración > Privacidad > Micrófono y habilita el acceso.';
-                    break;
-                case 'NotFoundError':
-                    errorMessage = 'No se encontró micrófono disponible.';
-                    break;
-                case 'NotReadableError':
-                    errorMessage = 'El micrófono está siendo usado por otra aplicación.';
-                    break;
-                case 'NotSupportedError':
-                    errorMessage = 'Tu navegador no soporta grabación de audio.';
-                    break;
-                case 'SecurityError':
-                    errorMessage = 'Acceso denegado por razones de seguridad. ¿Estás usando HTTPS?';
-                    break;
-            }
-            
-            showError(errorMessage);
-        }
-
-        function stopRecording() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
-                isRecording = false;
-                
-                recordButton.classList.remove('recording');
-                recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
-                statusText.textContent = 'Procesando audio...';
-                loadingSpinner.style.display = 'block';
-                
-                // Liberar el micrófono
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            }
-        }
-
-        async function sendAudioToWebhook(audioBlob) {
-            const webhookUrl = webhookInput.value.trim();
-            
-            try {
-                if (audioBlob.size === 0) {
-                    throw new Error('El audio está vacío. Intenta grabar de nuevo.');
-                }
-                
-                // Verificar tamaño mínimo (1 segundo ≈ 8KB)
-                if (audioBlob.size < 1000) {
-                    throw new Error('Audio demasiado corto. Graba al menos 1 segundo.');
-                }
-                
-                const formData = new FormData();
-                let filename = 'recording.webm';
-                if (audioBlob.type.includes('mp4')) {
-                    filename = 'recording.mp4';
-                } else if (audioBlob.type.includes('wav')) {
-                    filename = 'recording.wav';
-                } else if (audioBlob.type.includes('opus')) {
-                    filename = 'recording.opus';
-                }
-                
-                formData.append('audio', audioBlob, filename);
-
-                // Timeout más largo para móviles con conexión lenta
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 45000);
-
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json, text/plain, */*'
-                    },
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
-                }
-
-                const contentType = response.headers.get('content-type');
-                let transcript = '';
-
-                try {
-                    if (contentType && contentType.includes('application/json')) {
-                        const result = await response.json();
-                        transcript = result.transcript || result.message || 'Evento procesado correctamente';
-                    } else {
-                        const resultText = await response.text();
-                        transcript = resultText.trim() || 'Evento procesado correctamente';
-                    }
-                } catch (parseError) {
-                    transcript = 'Evento procesado correctamente';
-                }
-
-                handleSuccess(transcript);
-
-            } catch (error) {
-                console.error('Error en sendAudioToWebhook:', error);
-                
-                let errorMessage = 'Error al procesar la solicitud';
-                
-                if (error.name === 'AbortError') {
-                    errorMessage = 'Tiempo de espera agotado. Verifica tu conexión.';
-                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    errorMessage = 'Sin conexión a internet. Verifica tu red.';
-                } else if (error.message.includes('404')) {
-                    errorMessage = 'URL del webhook no encontrada.';
-                } else if (error.message.includes('500')) {
-                    errorMessage = 'Error del servidor. Inténtalo más tarde.';
-                } else if (error.message) {
-                    errorMessage = error.message;
-                }
-
-                handleError(errorMessage);
-            } finally {
-                loadingSpinner.style.display = 'none';
-            }
-        }
-
-        function handleSuccess(transcriptText) {
-            document.getElementById('transcript').textContent = transcriptText;
-            document.getElementById('transcript').classList.add('has-content');
-            showSuccess();
+                const hasPermission = await request
