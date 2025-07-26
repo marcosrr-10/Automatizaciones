@@ -1,0 +1,483 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Política de Privacidad - Calendario por Voz</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --light-gray: #f9fafb;
+            --white: #ffffff;
+            --border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #f9fafb 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            color: var(--dark);
+        }
+
+        .main-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 720px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 32px;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, var(--primary) 0%, --primary-dark) 100%);
+            padding: 32px 24px 24px;
+            text-align: center;
+            color: var(--white);
+            position: relative;
+        }
+
+        .header-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: var(--white);
+            border-radius: 16px 16px 0 0;
+            transform: translateY(8px);
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .main-content {
+            padding: 32px 24px;
+        }
+
+        .content-section {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .content-section h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 16px;
+        }
+
+        .content-section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 24px 0 16px;
+        }
+
+        .content-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 16px 0 12px;
+        }
+
+        .content-section p {
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .content-section ul {
+            list-style-type: disc;
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .content-section ul li {
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .content-section a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .content-section a:hover {
+            color: var(--primary-dark);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+        }
+
+        .footer {
+            padding: 16px;
+            text-align: center;
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: var(--primary-dark);
+        }
+
+        .footer-legal {
+            margin-top: 8px;
+            font-size: 11px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .footer-legal a {
+            color: var(--gray);
+        }
+
+        .footer-legal a:hover {
+            color: var(--primary);
+        }
+
+        .footer-legal .separator {
+            color: var(--gray);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .main-container {
+                margin: 0;
+                border-radius: 12px;
+            }
+
+            .header-section {
+                padding: 24px 16px 16px;
+            }
+
+            .app-title {
+                font-size: 20px;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .main-content {
+                padding: 24px 16px;
+            }
+
+            .content-section {
+                padding: 16px;
+            }
+
+            .content-section h1 {
+                font-size: 20px;
+            }
+
+            .content-section h2 {
+                font-size: 18px;
+            }
+
+            .content-section h3 {
+                font-size: 14px;
+            }
+
+            .footer-legal {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-section">
+            <h1 class="app-title">
+                <i class="fas fa-microphone-alt"></i>
+                <span>Política de Privacidad</span>
+            </h1>
+        </div>
+        
+        <div class="main-content">
+            <div class="content-section">
+                <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver a Calendario por Voz</a>
+                <h1>Política de Privacidad</h1>
+                <p>Última actualización: 24 de julio de 2025</p>
+                <p>Esta Política de Privacidad describe nuestras políticas y procedimientos sobre la recopilación, uso y divulgación de su información cuando utiliza el Servicio, y le informa sobre sus derechos de privacidad y cómo la ley lo protege.</p>
+                <p>Utilizamos sus datos personales para proporcionar y mejorar el Servicio. Al usar el Servicio, usted acepta la recopilación y el uso de información de acuerdo con esta Política de Privacidad. Esta Política de Privacidad ha sido creada con la ayuda del <a href="https://www.freeprivacypolicy.com/free-privacy-policy-generator/" target="_blank">Generador Gratuito de Políticas de Privacidad</a>.</p>
+                <h2>Interpretación y Definiciones</h2>
+                <h3>Interpretación</h3>
+                <p>Las palabras cuya inicial está en mayúscula tienen significados definidos en las siguientes condiciones. Las definiciones que se indican a continuación tendrán el mismo significado independientemente de si aparecen en singular o en plural.</p>
+                <h3>Definiciones</h3>
+                <p>A los efectos de esta Política de Privacidad:</p>
+                <ul>
+                    <li>
+                        <p><strong>Cuenta</strong> significa una cuenta única creada para que usted acceda a nuestro Servicio o a partes de nuestro Servicio.</p>
+                    </li>
+                    <li>
+                        <p><strong>Afiliado</strong> significa una entidad que controla, es controlada por o está bajo control común con una parte, donde "control" significa la propiedad del 50% o más de las acciones, intereses de capital u otros valores con derecho a voto para la elección de directores u otra autoridad de gestión.</p>
+                    </li>
+                    <li>
+                        <p><strong>Compañía</strong> (referida como "la Compañía", "Nosotros", "Nos" o "Nuestro" en este Acuerdo) se refiere a Calendario por Voz.</p>
+                    </li>
+                    <li>
+                        <p><strong>Cookies</strong> son pequeños archivos que un sitio web coloca en su computadora, dispositivo móvil o cualquier otro dispositivo, y que contienen detalles de su historial de navegación en ese sitio web, entre otros usos.</p>
+                    </li>
+                    <li>
+                        <p><strong>País</strong> se refiere a: España</p>
+                    </li>
+                    <li>
+                        <p><strong>Dispositivo</strong> significa cualquier dispositivo que pueda acceder al Servicio, como una computadora, un teléfono móvil o una tableta digital.</p>
+                    </li>
+                    <li>
+                        <p><strong>Datos Personales</strong> es cualquier información que se relacione con un individuo identificado o identificable.</p>
+                    </li>
+                    <li>
+                        <p><strong>Servicio</strong> se refiere al Sitio Web.</p>
+                    </li>
+                    <li>
+                        <p><strong>Proveedor de Servicios</strong> significa cualquier persona física o jurídica que procesa los datos en nombre de la Compañía. Se refiere a empresas o individuos de terceros contratados por la Compañía para facilitar el Servicio, proporcionar el Servicio en nombre de la Compañía, realizar servicios relacionados con el Servicio o asistir a la Compañía en el análisis de cómo se utiliza el Servicio.</p>
+                    </li>
+                    <li>
+                        <p><strong>Datos de Uso</strong> se refiere a los datos recopilados automáticamente, ya sea generados por el uso del Servicio o por la propia infraestructura del Servicio (por ejemplo, la duración de una visita a una página).</p>
+                    </li>
+                    <li>
+                        <p><strong>Sitio Web</strong> se refiere a Calendario por Voz, accesible desde <a href="https://voicecalendar.vercel.app" rel="external nofollow noopener" target="_blank">https://voicecalendar.vercel.app</a></p>
+                    </li>
+                    <li>
+                        <p><strong>Usted</strong> significa el individuo que accede o utiliza el Servicio, o la empresa u otra entidad legal en nombre de la cual dicho individuo accede o utiliza el Servicio, según corresponda.</p>
+                    </li>
+                </ul>
+                <h2>Recopilación y Uso de Sus Datos Personales</h2>
+                <h3>Tipos de Datos Recopilados</h3>
+                <h4>Datos Personales</h4>
+                <p>Mientras utiliza nuestro Servicio, podemos pedirle que nos proporcione cierta información de identificación personal que pueda usarse para contactarlo o identificarlo. La información de identificación personal puede incluir, entre otros:</p>
+                <ul>
+                    <li>Datos de Uso</li>
+                </ul>
+                <h4>Datos de Uso</h4>
+                <p>Los Datos de Uso se recopilan automáticamente cuando utiliza el Servicio.</p>
+                <p>Los Datos de Uso pueden incluir información como la dirección de Protocolo de Internet de su Dispositivo (por ejemplo, la dirección IP), el tipo de navegador, la versión del navegador, las páginas de nuestro Servicio que visita, la fecha y hora de su visita, el tiempo que pasa en esas páginas, identificadores únicos de dispositivos y otros datos de diagnóstico.</p>
+                <p>Cuando accede al Servicio por o a través de un dispositivo móvil, podemos recopilar cierta información automáticamente, incluyendo, pero no limitado a, el tipo de dispositivo móvil que utiliza, el ID único de su dispositivo móvil, la dirección IP de su dispositivo móvil, su sistema operativo móvil, el tipo de navegador de Internet móvil que utiliza, identificadores únicos de dispositivos y otros datos de diagnóstico.</p>
+                <p>También podemos recopilar información que su navegador envía cada vez que visita nuestro Servicio o cuando accede al Servicio por o a través de un dispositivo móvil.</p>
+                <h4>Tecnologías de Seguimiento y Cookies</h4>
+                <p>Utilizamos Cookies y tecnologías de seguimiento similares para rastrear la actividad en nuestro Servicio y almacenar cierta información. Las tecnologías de seguimiento utilizadas son balizas, etiquetas y scripts para recopilar y rastrear información y para mejorar y analizar nuestro Servicio. Las tecnologías que utilizamos pueden incluir:</p>
+                <ul>
+                    <li><strong>Cookies o Cookies del Navegador.</strong> Una cookie es un pequeño archivo colocado en su Dispositivo. Puede indicar a su navegador que rechace todas las Cookies o que indique cuando se está enviando una Cookie. Sin embargo, si no acepta Cookies, es posible que no pueda usar algunas partes de nuestro Servicio. A menos que haya ajustado la configuración de su navegador para que rechace Cookies, nuestro Servicio puede usar Cookies.</li>
+                    <li><strong>Balizas Web.</strong> Ciertas secciones de nuestro Servicio y nuestros correos electrónicos pueden contener pequeños archivos electrónicos conocidos como balizas web (también denominados gifs transparentes, etiquetas de píxel y gifs de un solo píxel) que permiten a la Compañía, por ejemplo, contar los usuarios que han visitado esas páginas o abierto un correo electrónico y para otras estadísticas relacionadas con el sitio web (por ejemplo, registrar la popularidad de una sección determinada y verificar la integridad del sistema y del servidor).</li>
+                </ul>
+                <p>Las Cookies pueden ser Cookies "Persistentes" o "de Sesión". Las Cookies Persistentes permanecen en su computadora personal o dispositivo móvil cuando se desconecta, mientras que las Cookies de Sesión se eliminan tan pronto como cierra su navegador web. Obtenga más información sobre las cookies en el artículo del sitio web <a href="https://www.freeprivacypolicy.com/blog/sample-privacy-policy-template/#Use_Of_Cookies_And_Tracking" target="_blank">Free Privacy Policy</a>.</p>
+                <p>Utilizamos Cookies de Sesión y Persistentes para los fines establecidos a continuación:</p>
+                <ul>
+                    <li>
+                        <p><strong>Cookies Necesarias / Esenciales</strong></p>
+                        <p>Tipo: Cookies de Sesión</p>
+                        <p>Administradas por: Nosotros</p>
+                        <p>Propósito: Estas Cookies son esenciales para proporcionarle los servicios disponibles a través del Sitio Web y permitirle usar algunas de sus funciones. Ayudan a autenticar a los usuarios y prevenir el uso fraudulento de cuentas de usuario. Sin estas Cookies, los servicios que ha solicitado no pueden proporcionarse, y solo usamos estas Cookies para proporcionarle esos servicios.</p>
+                    </li>
+                    <li>
+                        <p><strong>Cookies de Aceptación de Política / Aviso</strong></p>
+                        <p>Tipo: Cookies Persistentes</p>
+                        <p>Administradas por: Nosotros</p>
+                        <p>Propósito: Estas Cookies identifican si los usuarios han aceptado el uso de cookies en el Sitio Web.</p>
+                    </li>
+                    <li>
+                        <p><strong>Cookies de Funcionalidad</strong></p>
+                        <p>Tipo: Cookies Persistentes</p>
+                        <p>Administradas por: Nosotros</p>
+                        <p>Propósito: Estas Cookies nos permiten recordar las elecciones que hace cuando utiliza el Sitio Web, como recordar sus detalles de inicio de sesión o preferencias de idioma. El propósito de estas Cookies es proporcionarle una experiencia más personalizada y evitar que tenga que volver a introducir sus preferencias cada vez que utiliza el Sitio Web.</p>
+                    </li>
+                </ul>
+                <p>Para obtener más información sobre las cookies que usamos y sus opciones con respecto a las cookies, visite nuestra Política de Cookies o la sección de Cookies de nuestra Política de Privacidad.</p>
+                <h3>Uso de Sus Datos Personales</h3>
+                <p>La Compañía puede usar los Datos Personales para los siguientes fines:</p>
+                <ul>
+                    <li>
+                        <p><strong>Proporcionar y mantener nuestro Servicio</strong>, incluyendo el monitoreo del uso de nuestro Servicio.</p>
+                    </li>
+                    <li>
+                        <p><strong>Gestionar Su Cuenta:</strong> para gestionar su registro como usuario del Servicio. Los Datos Personales que proporcione pueden darle acceso a diferentes funcionalidades del Servicio que están disponibles para usted como usuario registrado.</p>
+                    </li>
+                    <li>
+                        <p><strong>Para la ejecución de un contrato:</strong> el desarrollo, cumplimiento y realización del contrato de compra de los productos, artículos o servicios que haya adquirido o de cualquier otro contrato con Nosotros a través del Servicio.</p>
+                    </li>
+                    <li>
+                        <p><strong>Contactarlo:</strong> Para contactarlo por correo electrónico, llamadas telefónicas, SMS u otras formas equivalentes de comunicación electrónica, como notificaciones push de una aplicación móvil sobre actualizaciones o comunicaciones informativas relacionadas con las funcionalidades, productos o servicios contratados, incluidas las actualizaciones de seguridad, cuando sea necesario o razonable para su implementación.</p>
+                    </li>
+                    <li>
+                        <p><strong>Proporcionarle</strong> noticias, ofertas especiales e información general sobre otros bienes, servicios y eventos que ofrecemos que son similares a los que ya ha comprado o consultado, a menos que haya optado por no recibir dicha información.</p>
+                    </li>
+                    <li>
+                        <p><strong>Gestionar Sus solicitudes:</strong> Para atender y gestionar Sus solicitudes hacia Nosotros.</p>
+                    </li>
+                    <li>
+                        <p><strong>Para transferencias comerciales:</strong> Podemos usar Su información para evaluar o realizar una fusión, desinversión, reestructuración, reorganización, disolución u otra venta o transferencia de algunos o todos Nuestros activos, ya sea como empresa en marcha o como parte de un procedimiento de quiebra, liquidación o similar, en el que los Datos Personales que tenemos sobre los usuarios de nuestro Servicio estén entre los activos transferidos.</p>
+                    </li>
+                    <li>
+                        <p><strong>Para otros fines:</strong> Podemos usar Su información para otros fines, como análisis de datos, identificación de tendencias de uso, determinación de la efectividad de nuestras campañas promocionales y para evaluar y mejorar nuestro Servicio, productos, servicios, marketing y su experiencia.</p>
+                    </li>
+                </ul>
+                <p>Podemos compartir Su información personal en las siguientes situaciones:</p>
+                <ul>
+                    <li><strong>Con Proveedores de Servicios:</strong> Podemos compartir Su información personal con Proveedores de Servicios para monitorear y analizar el uso de nuestro Servicio, para contactarlo.</li>
+                    <li><strong>Para transferencias comerciales:</strong> Podemos compartir o transferir Su información personal en conexión con, o durante las negociaciones de, cualquier fusión, venta de activos de la Compañía, financiación o adquisición de todo o parte de Nuestro negocio a otra compañía.</li>
+                    <li><strong>Con Afiliados:</strong> Podemos compartir Su información con Nuestros afiliados, en cuyo caso exigiremos que esos afiliados respeten esta Política de Privacidad. Los afiliados incluyen Nuestra empresa matriz y cualquier otra subsidiaria, socios de empresas conjuntas u otras compañías que Nosotros controlemos o que estén bajo control común con Nosotros.</li>
+                    <li><strong>Con socios comerciales:</strong> Podemos compartir Su información con Nuestros socios comerciales para ofrecerle ciertos productos, servicios o promociones.</li>
+                    <li><strong>Con otros usuarios:</strong> cuando comparte información personal o interactúa de otra manera en las áreas públicas con otros usuarios, dicha información puede ser vista por todos los usuarios y puede distribuirse públicamente fuera.</li>
+                    <li><strong>Con Su consentimiento:</strong> Podemos divulgar Su información personal para cualquier otro propósito con Su consentimiento.</li>
+                </ul>
+                <h3>Retención de Sus Datos Personales</h3>
+                <p>La Compañía retendrá Sus Datos Personales solo durante el tiempo necesario para los fines establecidos en esta Política de Privacidad. Retendremos y usaremos Sus Datos Personales en la medida necesaria para cumplir con nuestras obligaciones legales (por ejemplo, si estamos obligados a retener sus datos para cumplir con las leyes aplicables), resolver disputas y hacer cumplir nuestros acuerdos y políticas legales.</p>
+                <p>La Compañía también retendrá los Datos de Uso para fines de análisis interno. Los Datos de Uso generalmente se retienen por un período de tiempo más corto, excepto cuando estos datos se utilizan para fortalecer la seguridad o mejorar la funcionalidad de Nuestro Servicio, o cuando estamos legalmente obligados a retener estos datos por períodos de tiempo más largos.</p>
+                <h3>Transferencia de Sus Datos Personales</h3>
+                <p>Su información, incluidos los Datos Personales, se procesa en las oficinas operativas de la Compañía y en cualquier otro lugar donde se encuentren las partes involucradas en el procesamiento. Esto significa que esta información puede transferirse y mantenerse en computadoras ubicadas fuera de Su estado, provincia, país u otra jurisdicción gubernamental donde las leyes de protección de datos puedan diferir de las de Su jurisdicción.</p>
+                <p>Su consentimiento a esta Política de Privacidad seguido de Su presentación de dicha información representa Su acuerdo con esa transferencia.</p>
+                <p>La Compañía tomará todas las medidas razonablemente necesarias para garantizar que Sus datos se traten de manera segura y de acuerdo con esta Política de Privacidad, y no se realizará ninguna transferencia de Sus Datos Personales a una organización o país a menos que existan controles adecuados, incluida la seguridad de Sus datos y otra información personal.</p>
+                <h3>Eliminación de Sus Datos Personales</h3>
+                <p>Usted tiene el derecho de eliminar o solicitar que Nosotros ayudemos a eliminar los Datos Personales que hemos recopilado sobre Usted.</p>
+                <p>Nuestro Servicio puede darle la capacidad de eliminar cierta información sobre Usted desde dentro del Servicio.</p>
+                <p>Puede actualizar, modificar o eliminar Su información en cualquier momento iniciando sesión en Su Cuenta, si tiene una, y visitando la sección de configuración de la cuenta que le permite gestionar Su información personal. También puede contactarnos para solicitar acceso, corrección o eliminación de cualquier información personal que nos haya proporcionado.</p>
+                <p>Sin embargo, tenga en cuenta que podemos necesitar retener cierta información cuando tenemos una obligación legal o una base legal para hacerlo.</p>
+                <h3>Divulgación de Sus Datos Personales</h3>
+                <h4>Transacciones Comerciales</h4>
+                <p>Si la Compañía está involucrada en una fusión, adquisición o venta de activos, Sus Datos Personales pueden ser transferidos. Le proporcionaremos un aviso antes de que Sus Datos Personales sean transferidos y estén sujetos a una Política de Privacidad diferente.</p>
+                <h4>Cumplimiento de la Ley</h4>
+                <p>En ciertas circunstancias, la Compañía puede estar obligada a divulgar Sus Datos Personales si así lo requiere la ley o en respuesta a solicitudes válidas de autoridades públicas (por ejemplo, un tribunal o una agencia gubernamental).</p>
+                <h4>Otros Requisitos Legales</h4>
+                <p>La Compañía puede divulgar Sus Datos Personales de buena fe creyendo que tal acción es necesaria para:</p>
+                <ul>
+                    <li>Cumplir con una obligación legal</li>
+                    <li>Proteger y defender los derechos o la propiedad de la Compañía</li>
+                    <li>Prevenir o investigar posibles irregularidades en relación con el Servicio</li>
+                    <li>Proteger la seguridad personal de los Usuarios del Servicio o del público</li>
+                    <li>Proteger contra la responsabilidad legal</li>
+                </ul>
+                <h3>Seguridad de Sus Datos Personales</h3>
+                <p>La seguridad de Sus Datos Personales es importante para Nosotros, pero recuerde que ningún método de transmisión por Internet o método de almacenamiento electrónico es 100% seguro. Aunque Nos esforzamos por usar medios comercialmente aceptables para proteger Sus Datos Personales, no podemos garantizar su seguridad absoluta.</p>
+                <h2>Privacidad de los Niños</h2>
+                <p>Nuestro Servicio no está dirigido a personas menores de 13 años. No recopilamos conscientemente información de identificación personal de personas menores de 13 años. Si Usted es padre o tutor y sabe que Su hijo nos ha proporcionado Datos Personales, por favor contáctenos. Si descubrimos que hemos recopilado Datos Personales de alguien menor de 13 años sin verificación del consentimiento parental, tomamos medidas para eliminar esa información de Nuestros servidores.</p>
+                <p>Si necesitamos basarnos en el consentimiento como base legal para procesar Su información y Su país requiere el consentimiento de un padre, podemos requerir el consentimiento de Su padre antes de recopilar y usar esa información.</p>
+                <h2>Enlaces a Otros Sitios Web</h2>
+                <p>Nuestro Servicio puede contener enlaces a otros sitios web que no son operados por Nosotros. Si hace clic en un enlace de terceros, será dirigido al sitio de ese tercero. Le recomendamos encarecidamente que revise la Política de Privacidad de cada sitio que visite.</p>
+                <p>No tenemos control ni asumimos ninguna responsabilidad por el contenido, las políticas de privacidad o las prácticas de sitios o servicios de terceros.</p>
+                <h2>Cambios en esta Política de Privacidad</h2>
+                <p>Podemos actualizar Nuestra Política de Privacidad de vez en cuando. Le notificaremos de cualquier cambio publicando la nueva Política de Privacidad en esta página.</p>
+                <p>Le informaremos por correo electrónico y/o un aviso destacado en Nuestro Servicio, antes de que el cambio entre en vigor y actualizaremos la fecha de "Última actualización" en la parte superior de esta Política de Privacidad.</p>
+                <p>Se le recomienda revisar esta Política de Privacidad periódicamente para conocer cualquier cambio. Los cambios en esta Política de Privacidad son efectivos cuando se publican en esta página.</p>
+                <h2>Contáctenos</h2>
+                <p>Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos:</p>
+                <ul>
+                    <li>Por correo electrónico: <a href="mailto:contacto@voicecalendar.com">contacto@voicecalendar.com</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Desarrollado con <i class="fas fa-heart"></i> por el equipo de Calendario por Voz</p>
+        <div class="footer-legal">
+            <a href="legal.html">Aviso Legal</a>
+            <span class="separator">•</span>
+            <a href="privacy.html">Política de Privacidad</a>
+        </div>
+    </footer>
+</body>
+</html>
