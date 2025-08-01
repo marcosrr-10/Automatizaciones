@@ -155,6 +155,16 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
+        .webhook-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .webhook-link:hover {
+            color: var(--primary-dark);
+        }
+
         .instructions-card {
             background: var(--white);
             border: 1px solid var(--border);
@@ -422,6 +432,10 @@
             font-weight: 500;
         }
 
+        .download-link a:hover {
+            color: var(--primary-dark);
+        }
+
         .footer {
             padding: 16px;
             text-align: center;
@@ -461,6 +475,79 @@
             color: var(--gray);
         }
 
+        /* Estilos para la sección "¿Para quién es?" */
+        .use-cases-section {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .use-cases-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .use-cases-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .use-case-card {
+            background: var(--light-gray);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+        }
+
+        .use-case-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .use-case-card p {
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.5;
+        }
+
+        /* Estilo para el botón de PayPal */
+        .paypal-btn {
+            width: auto;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #0070ba 0%, #005ea6 100%);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .paypal-btn:hover {
+            transform: scale(0.95);
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 8px;
@@ -489,31 +576,41 @@
                 padding: 24px 16px;
             }
 
-            .config-section, .instructions-card, .recording-section {
+            .config-section, .instructions-card, .recording-section, .use-cases-section {
                 padding: 16px;
             }
 
-            .record-btn {
+            .record-btn, .paypal-btn {
                 width: 70px;
                 height: 70px;
                 font-size: 28px;
+            }
+
+            .paypal-btn {
+                width: auto;
+                padding: 10px 20px;
+                font-size: 14px;
             }
 
             .footer-legal {
                 flex-direction: column;
                 gap: 8px;
             }
+
+            .use-cases-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
-            .record-btn {
+            .record-btn, .paypal-btn {
                 -webkit-transform: translateZ(0);
                 transform: translateZ(0);
             }
         }
 
         @supports (-webkit-touch-callout: none) {
-            .record-btn {
+            .record-btn, .paypal-btn {
                 -webkit-transform: translate3d(0, 0, 0);
                 transform: translate3d(0, 0, 0);
             }
@@ -557,7 +654,7 @@
                 <i class="fas fa-microphone-alt"></i>
                 <span>Calendario por Voz</span>
             </h1>
-            <p class="app-subtitle">Programa eventos en tu calendario con comandos de voz simples y naturales</p>
+            <p class="app-subtitle">Programa eventos en TU calendario con comandos de voz simples y naturales. ¡Creado por un estudiante de 16 años! Pruébalo gratis y déjame tu feedback.</p>
         </div>
         
         <div class="main-content">
@@ -585,6 +682,9 @@
                         autocapitalize="off"
                         spellcheck="false"
                     >
+                    <p class="instruction-text">
+                        ¿No sabes cómo configurarlo? Mira mi <a href="URL_DEL_TUTORIAL" class="webhook-link">tutorial</a> o descarga mi <a href="URL_DEL_BLUEPRINT" class="webhook-link">plantilla de Make</a>.
+                    </p>
                 </div>
             </div>
 
@@ -620,6 +720,33 @@
                 </div>
             </div>
 
+            <div class="use-cases-section">
+                <div class="use-cases-header">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>¿Para quién es?</h3>
+                </div>
+                <div class="use-cases-grid">
+                    <div class="use-case-card">
+                        <h4>Estudiantes</h4>
+                        <p>Programa exámenes y tareas con un simple comando de voz.</p>
+                    </div>
+                    <div class="use-case-card">
+                        <h4>Autónomos</h4>
+                        <p>Organiza reuniones y plazos sin complicaciones.</p>
+                    </div>
+                    <div class="use-case-card">
+                        <h4>Padres</h4>
+                        <p>No olvides citas médicas o eventos de tus hijos.</p>
+                    </div>
+                    <div class="use-case-card">
+                        <h4>Otro</h4>
+                        <p>Ideal para cualquiera que necesite organizarse rápido.</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="recording-section">
                 <button id="recordButton" class="record-btn">
                     <i class="fas fa-microphone"></i>
@@ -648,18 +775,32 @@
                 <div id="downloadLink" class="download-link">
                     <a href="#" id="audioDownload">Descargar audio grabado</a>
                 </div>
+
+                <form action="https://www.paypal.com/donate" method="post" target="_top">
+                    <input type="hidden" name="hosted_button_id" value="TU_BUTTON_ID" />
+                    <button type="submit" class="paypal-btn">
+                        <i class="fas fa-heart"></i> Apóyame con una donación
+                    </button>
+                </form>
+                <p class="instruction-text mt-2">Soy un estudiante de 16 años aprendiendo IA. Tu apoyo me motiva a mejorar VoiceCalendar.</p>
+
+                <a href="URL_DEL_FORMULARIO" target="_blank" class="download-link mt-4">
+                    <i class="fas fa-comment"></i> Dime qué te parece (formulario)
+                </a>
             </div>
         </div>
     </div>
 
     <footer class="footer">
-    <p>Desarrollado con <i class="fas fa-heart"></i> por el equipo de Calendario por Voz</p>
-    <div class="footer-legal">
-        <a href="legal.html">Aviso Legal</a>
-        <span class="separator">•</span>
-        <a href="privacy.html">Política de Privacidad</a>
-    </div>
-</footer>
+        <p>Desarrollado con <i class="fas fa-heart"></i> por un estudiante de 16 años apasionado por IA</p>
+        <div class="footer-legal">
+            <a href="legal.html">Aviso Legal</a>
+            <span class="separator">•</span>
+            <a href="privacy.html">Política de Privacidad</a>
+            <span class="separator">•</span>
+            <a href="https://x.com/tu_usuario" target="_blank">Contáctame en X</a>
+        </div>
+    </footer>
 
     <script>
         let mediaRecorder = null;
