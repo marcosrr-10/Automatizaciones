@@ -1,0 +1,2515 @@
+{
+    "name": "VoiceCalendar",
+    "flow": [
+        {
+            "id": 18,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 2813665,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": -1791,
+                    "y": -21
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "data": {
+                                "editable": "true"
+                            },
+                            "label": "audio-to-calendar"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 19,
+            "module": "assembly-ai:UploadFile",
+            "version": 1,
+            "mapper": {
+                "file": "{{18.audio.data}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -1789,
+                    "y": 357
+                },
+                "restore": {
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "assembly-ai"
+                            }
+                        
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:assembly-ai",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "file",
+                        "type": "buffer",
+                        "label": "File",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 20,
+            "module": "assembly-ai:TranscribeAudio",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 10092835,
+                "wait_until_ready": true
+            },
+            "mapper": {
+                "audio_url": "{{19.upload_url}}",
+                "punctuate": true,
+                "format_text": true,
+                "disfluencies": false,
+                "dual_channel": false,
+                "language_code": "es",
+                "language_detection": false
+            },
+            "metadata": {
+                "designer": {
+                    "x": -1432,
+                    "y": 349
+                },
+                "restore": {
+                    "expect": {
+                        "topics": {
+                            "mode": "chose"
+                        },
+                        "punctuate": {
+                            "mode": "chose"
+                        },
+                        "redact_pii": {
+                            "mode": "chose"
+                        },
+                        "word_boost": {
+                            "mode": "chose"
+                        },
+                        "boost_param": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        },
+                        "format_text": {
+                            "mode": "chose"
+                        },
+                        "disfluencies": {
+                            "mode": "chose"
+                        },
+                        "dual_channel": {
+                            "mode": "chose"
+                        },
+                        "speech_model": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        },
+                        "summary_type": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        },
+                        "auto_chapters": {
+                            "mode": "chose"
+                        },
+                        "custom_topics": {
+                            "mode": "chose"
+                        },
+                        "language_code": {
+                            "mode": "chose",
+                            "label": "Spanish"
+                        },
+                        "summarization": {
+                            "mode": "chose"
+                        },
+                        "summary_model": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        },
+                        "content_safety": {
+                            "mode": "chose"
+                        },
+                        "iab_categories": {
+                            "mode": "chose"
+                        },
+                        "redact_pii_sub": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        },
+                        "speaker_labels": {
+                            "mode": "chose"
+                        },
+                        "auto_highlights": {
+                            "mode": "chose"
+                        },
+                        "custom_spelling": {
+                            "mode": "chose"
+                        },
+                        "entity_detection": {
+                            "mode": "chose"
+                        },
+                        "filter_profanity": {
+                            "mode": "chose"
+                        },
+                        "redact_pii_audio": {
+                            "mode": "chose"
+                        },
+                        "language_detection": {
+                            "mode": "chose"
+                        },
+                        "sentiment_analysis": {
+                            "mode": "chose"
+                        },
+                        "redact_pii_policies": {
+                            "mode": "chose"
+                        },
+                        "redact_pii_audio_quality": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "assembly-ai"
+                            }
+                           
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:assembly-ai",
+                        "label": "Connection",
+                        "required": true
+                    },
+                    {
+                        "name": "wait_until_ready",
+                        "type": "boolean",
+                        "label": "Wait until Transcript is Ready",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "audio_url",
+                        "type": "url",
+                        "label": "Audio URL",
+                        "required": true
+                    },
+                    {
+                        "name": "language_code",
+                        "type": "select",
+                        "label": "Language Code",
+                        "validate": {
+                            "enum": [
+                                "en",
+                                "en_au",
+                                "en_uk",
+                                "en_us",
+                                "es",
+                                "fr",
+                                "de",
+                                "it",
+                                "pt",
+                                "nl",
+                                "af",
+                                "sq",
+                                "am",
+                                "ar",
+                                "hy",
+                                "as",
+                                "az",
+                                "ba",
+                                "eu",
+                                "be",
+                                "bn",
+                                "bs",
+                                "br",
+                                "bg",
+                                "my",
+                                "ca",
+                                "zh",
+                                "hr",
+                                "cs",
+                                "da",
+                                "et",
+                                "fo",
+                                "fi",
+                                "gl",
+                                "ka",
+                                "el",
+                                "gu",
+                                "ht",
+                                "ha",
+                                "haw",
+                                "he",
+                                "hi",
+                                "hu",
+                                "is",
+                                "id",
+                                "ja",
+                                "jw",
+                                "kn",
+                                "kk",
+                                "km",
+                                "ko",
+                                "lo",
+                                "la",
+                                "lv",
+                                "ln",
+                                "lt",
+                                "lb",
+                                "mk",
+                                "mg",
+                                "ms",
+                                "ml",
+                                "mt",
+                                "mi",
+                                "mr",
+                                "mn",
+                                "ne",
+                                "no",
+                                "nn",
+                                "oc",
+                                "pa",
+                                "ps",
+                                "fa",
+                                "pl",
+                                "ro",
+                                "ru",
+                                "sa",
+                                "sr",
+                                "sn",
+                                "sd",
+                                "si",
+                                "sk",
+                                "sl",
+                                "so",
+                                "su",
+                                "sw",
+                                "sv",
+                                "tl",
+                                "tg",
+                                "ta",
+                                "tt",
+                                "te",
+                                "th",
+                                "bo",
+                                "tr",
+                                "tk",
+                                "uk",
+                                "ur",
+                                "uz",
+                                "vi",
+                                "cy",
+                                "yi",
+                                "yo"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "language_detection",
+                        "type": "boolean",
+                        "label": "Language Detection"
+                    },
+                    {
+                        "name": "language_confidence_threshold",
+                        "type": "number",
+                        "label": "Language Confidence Threshold",
+                        "validate": {
+                            "max": 1,
+                            "min": 0
+                        }
+                    },
+                    {
+                        "name": "speech_model",
+                        "type": "select",
+                        "label": "Speech Model",
+                        "validate": {
+                            "enum": [
+                                "best",
+                                "nano"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "punctuate",
+                        "type": "boolean",
+                        "label": "Punctuate"
+                    },
+                    {
+                        "name": "format_text",
+                        "type": "boolean",
+                        "label": "Format Text"
+                    },
+                    {
+                        "name": "disfluencies",
+                        "type": "boolean",
+                        "label": "Disfluencies"
+                    },
+                    {
+                        "name": "dual_channel",
+                        "type": "boolean",
+                        "label": "Dual Channel"
+                    },
+                    {
+                        "name": "webhook_url",
+                        "type": "url",
+                        "label": "Webhook URL"
+                    },
+                    {
+                        "name": "webhook_auth_header_name",
+                        "type": "text",
+                        "label": "Webhook Auth Header Name"
+                    },
+                    {
+                        "name": "webhook_auth_header_value",
+                        "type": "text",
+                        "label": "Webhook Auth Header Value"
+                    },
+                    {
+                        "name": "auto_highlights",
+                        "type": "boolean",
+                        "label": "Key Phrases"
+                    },
+                    {
+                        "name": "audio_start_from",
+                        "type": "integer",
+                        "label": "Audio Start From"
+                    },
+                    {
+                        "name": "audio_end_at",
+                        "type": "integer",
+                        "label": "Audio End At"
+                    },
+                    {
+                        "name": "word_boost",
+                        "spec": {
+                            "name": "value",
+                            "type": "text",
+                            "label": "Word Boost"
+                        },
+                        "type": "array",
+                        "label": "Word Boost"
+                    },
+                    {
+                        "name": "boost_param",
+                        "type": "select",
+                        "label": "Word Boost Level",
+                        "validate": {
+                            "enum": [
+                                "low",
+                                "default",
+                                "high"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "filter_profanity",
+                        "type": "boolean",
+                        "label": "Filter Profanity"
+                    },
+                    {
+                        "name": "redact_pii",
+                        "type": "boolean",
+                        "label": "Redact PII"
+                    },
+                    {
+                        "name": "redact_pii_audio",
+                        "type": "boolean",
+                        "label": "Redact PII Audio"
+                    },
+                    {
+                        "name": "redact_pii_audio_quality",
+                        "type": "select",
+                        "label": "Redact PII Audio Quality",
+                        "validate": {
+                            "enum": [
+                                "mp3",
+                                "wav"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "redact_pii_policies",
+                        "spec": {
+                            "name": "value",
+                            "type": "select",
+                            "label": "Redact PII Policies",
+                            "options": [
+                                {
+                                    "label": "Account Number",
+                                    "value": "account_number"
+                                },
+                                {
+                                    "label": "Banking Information",
+                                    "value": "banking_information"
+                                },
+                                {
+                                    "label": "Blood Type",
+                                    "value": "blood_type"
+                                },
+                                {
+                                    "label": "Credit Card CVV",
+                                    "value": "credit_card_cvv"
+                                },
+                                {
+                                    "label": "Credit Card Expiration",
+                                    "value": "credit_card_expiration"
+                                },
+                                {
+                                    "label": "Credit Card Number",
+                                    "value": "credit_card_number"
+                                },
+                                {
+                                    "label": "Date",
+                                    "value": "date"
+                                },
+                                {
+                                    "label": "Date Interval",
+                                    "value": "date_interval"
+                                },
+                                {
+                                    "label": "Date of Birth",
+                                    "value": "date_of_birth"
+                                },
+                                {
+                                    "label": "Driver's License",
+                                    "value": "drivers_license"
+                                },
+                                {
+                                    "label": "Drug",
+                                    "value": "drug"
+                                },
+                                {
+                                    "label": "Duration",
+                                    "value": "duration"
+                                },
+                                {
+                                    "label": "Email Address",
+                                    "value": "email_address"
+                                },
+                                {
+                                    "label": "Event",
+                                    "value": "event"
+                                },
+                                {
+                                    "label": "Filename",
+                                    "value": "filename"
+                                },
+                                {
+                                    "label": "Gender Sexuality",
+                                    "value": "gender_sexuality"
+                                },
+                                {
+                                    "label": "Healthcare Number",
+                                    "value": "healthcare_number"
+                                },
+                                {
+                                    "label": "Injury",
+                                    "value": "injury"
+                                },
+                                {
+                                    "label": "IP Address",
+                                    "value": "ip_address"
+                                },
+                                {
+                                    "label": "Language",
+                                    "value": "language"
+                                },
+                                {
+                                    "label": "Location",
+                                    "value": "location"
+                                },
+                                {
+                                    "label": "Marital Status",
+                                    "value": "marital_status"
+                                },
+                                {
+                                    "label": "Medical Condition",
+                                    "value": "medical_condition"
+                                },
+                                {
+                                    "label": "Medical Process",
+                                    "value": "medical_process"
+                                },
+                                {
+                                    "label": "Money Amount",
+                                    "value": "money_amount"
+                                },
+                                {
+                                    "label": "Nationality",
+                                    "value": "nationality"
+                                },
+                                {
+                                    "label": "Number Sequence",
+                                    "value": "number_sequence"
+                                },
+                                {
+                                    "label": "Occupation",
+                                    "value": "occupation"
+                                },
+                                {
+                                    "label": "Organization",
+                                    "value": "organization"
+                                },
+                                {
+                                    "label": "Passport Number",
+                                    "value": "passport_number"
+                                },
+                                {
+                                    "label": "Password",
+                                    "value": "password"
+                                },
+                                {
+                                    "label": "Person Age",
+                                    "value": "person_age"
+                                },
+                                {
+                                    "label": "Person Name",
+                                    "value": "person_name"
+                                },
+                                {
+                                    "label": "Phone Number",
+                                    "value": "phone_number"
+                                },
+                                {
+                                    "label": "Physical Attribute",
+                                    "value": "physical_attribute"
+                                },
+                                {
+                                    "label": "Political Affiliation",
+                                    "value": "political_affiliation"
+                                },
+                                {
+                                    "label": "Religion",
+                                    "value": "religion"
+                                },
+                                {
+                                    "label": "Statistics",
+                                    "value": "statistics"
+                                },
+                                {
+                                    "label": "Time",
+                                    "value": "time"
+                                },
+                                {
+                                    "label": "URL",
+                                    "value": "url"
+                                },
+                                {
+                                    "label": "US Social Security Number",
+                                    "value": "us_social_security_number"
+                                },
+                                {
+                                    "label": "Username",
+                                    "value": "username"
+                                },
+                                {
+                                    "label": "Vehicle ID",
+                                    "value": "vehicle_id"
+                                },
+                                {
+                                    "label": "Zodiac Sign",
+                                    "value": "zodiac_sign"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "label": "Redact PII Policies"
+                    },
+                    {
+                        "name": "redact_pii_sub",
+                        "type": "select",
+                        "label": "Redact PII Substitution",
+                        "validate": {
+                            "enum": [
+                                "entity_name",
+                                "hash"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "speaker_labels",
+                        "type": "boolean",
+                        "label": "Speaker Labels"
+                    },
+                    {
+                        "name": "speakers_expected",
+                        "type": "integer",
+                        "label": "Speakers Expected"
+                    },
+                    {
+                        "name": "content_safety",
+                        "type": "boolean",
+                        "label": "Content Moderation"
+                    },
+                    {
+                        "name": "content_safety_confidence",
+                        "type": "integer",
+                        "label": "Content Moderation Confidence",
+                        "validate": {
+                            "max": 100,
+                            "min": 25
+                        }
+                    },
+                    {
+                        "name": "iab_categories",
+                        "type": "boolean",
+                        "label": "Topic Detection"
+                    },
+                    {
+                        "name": "custom_spelling",
+                        "spec": {
+                            "name": "value",
+                            "spec": [
+                                {
+                                    "name": "from",
+                                    "spec": {
+                                        "name": "from",
+                                        "type": "text",
+                                        "label": "From",
+                                        "required": true
+                                    },
+                                    "type": "array",
+                                    "label": "From",
+                                    "required": true
+                                },
+                                {
+                                    "name": "to",
+                                    "type": "text",
+                                    "label": "To",
+                                    "required": true
+                                }
+                            ],
+                            "type": "collection"
+                        },
+                        "type": "array",
+                        "label": "Custom Spellings"
+                    },
+                    {
+                        "name": "sentiment_analysis",
+                        "type": "boolean",
+                        "label": "Sentiment Analysis"
+                    },
+                    {
+                        "name": "auto_chapters",
+                        "type": "boolean",
+                        "label": "Auto Chapters"
+                    },
+                    {
+                        "name": "entity_detection",
+                        "type": "boolean",
+                        "label": "Entity Detection"
+                    },
+                    {
+                        "name": "speech_threshold",
+                        "type": "number",
+                        "label": "Speech Threshold",
+                        "validate": {
+                            "max": 1,
+                            "min": 0
+                        }
+                    },
+                    {
+                        "name": "summarization",
+                        "type": "boolean",
+                        "label": "Enable Summarization"
+                    },
+                    {
+                        "name": "summary_model",
+                        "type": "select",
+                        "label": "Summary Model",
+                        "validate": {
+                            "enum": [
+                                "informative",
+                                "conversational",
+                                "catchy"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "summary_type",
+                        "type": "select",
+                        "label": "Summary Type",
+                        "validate": {
+                            "enum": [
+                                "bullets",
+                                "bullets_verbose",
+                                "gist",
+                                "headline",
+                                "paragraph"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "custom_topics",
+                        "type": "boolean",
+                        "label": "Enable Custom Topics"
+                    },
+                    {
+                        "name": "topics",
+                        "spec": {
+                            "name": "value",
+                            "type": "text",
+                            "label": "Custom Topics"
+                        },
+                        "type": "array",
+                        "label": "Custom Topics"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 21,
+            "module": "assembly-ai:GetTranscript",
+            "version": 1,
+            "parameters": {
+                "__IMTCONN__": 10092835
+            },
+            "mapper": {
+                "id": "{{20.id}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -1431,
+                    "y": -25
+                },
+                "restore": {
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "assembly-ai"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:assembly-ai",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "id",
+                        "type": "uuid",
+                        "label": "Transcript ID",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 25,
+            "module": "regexp:AdvancedParser",
+            "version": 1,
+            "parameters": {
+                "global": false,
+                "multiline": true,
+                "sensitive": false,
+                "singleline": false,
+                "advancedParser": true,
+                "continueWhenNoRes": false
+            },
+            "mapper": {
+                "text": "{{21.text}}",
+                "pattern": "Evento\\s*(.*?),\\s*Día\\s*(.*?),\\s*fecha\\s*(.*?),\\s*hora\\s*(.*)"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -1098,
+                    "y": -27
+                },
+                "restore": {},
+                "parameters": [
+                    {
+                        "name": "global",
+                        "type": "boolean",
+                        "label": "Global match",
+                        "required": true
+                    },
+                    {
+                        "name": "sensitive",
+                        "type": "boolean",
+                        "label": "Case sensitive",
+                        "required": true
+                    },
+                    {
+                        "name": "multiline",
+                        "type": "boolean",
+                        "label": "Multiline",
+                        "required": true
+                    },
+                    {
+                        "name": "singleline",
+                        "type": "boolean",
+                        "label": "Singleline",
+                        "required": true
+                    },
+                    {
+                        "name": "continueWhenNoRes",
+                        "type": "boolean",
+                        "label": "Continue the execution of the route even if the module finds no matches",
+                        "required": true
+                    },
+                    {
+                        "name": "advancedParser",
+                        "type": "hidden"
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "pattern",
+                        "type": "text",
+                        "label": "Pattern",
+                        "required": true
+                    },
+                    {
+                        "name": "text",
+                        "type": "text",
+                        "label": "Text",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 27,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "event_title",
+                "scope": "roundtrip",
+                "value": "{{25.`__IMTMATCH__`[2]}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -1098,
+                    "y": 318
+                },
+                "restore": {
+                    "expect": {
+                        "scope": {
+                            "label": "One cycle"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "Variable name",
+                        "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "type": "select",
+                        "label": "Variable lifetime",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "roundtrip",
+                                "execution"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "type": "any",
+                        "label": "Variable value"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "event_title",
+                        "type": "any",
+                        "label": "event_title"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 30,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "event_fecha",
+                "scope": "roundtrip",
+                "value": "{{25.`__IMTMATCH__`[4]}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -762,
+                    "y": 320
+                },
+                "restore": {
+                    "expect": {
+                        "scope": {
+                            "label": "One cycle"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "Variable name",
+                        "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "type": "select",
+                        "label": "Variable lifetime",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "roundtrip",
+                                "execution"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "type": "any",
+                        "label": "Variable value"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "event_fecha",
+                        "type": "any",
+                        "label": "event_fecha"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 33,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "Formateo_fecha",
+                "scope": "roundtrip",
+                "value": "{{formatDate(parseDate(30.event_fecha; \"DD [de] MMMM\"); \"YYYY-MM-DD\")}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -774,
+                    "y": -35
+                },
+                "restore": {
+                    "expect": {
+                        "scope": {
+                            "label": "One cycle"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "Variable name",
+                        "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "type": "select",
+                        "label": "Variable lifetime",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "roundtrip",
+                                "execution"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "type": "any",
+                        "label": "Variable value"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "Formateo_fecha",
+                        "type": "any",
+                        "label": "Formateo_fecha"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 32,
+            "module": "google-calendar:createAnEvent",
+            "version": 5,
+            "mapper": {
+                "end": "{{33.Formateo_fecha}}",
+                "start": "{{33.Formateo_fecha}}",
+                "select": "detail",
+                "summary": "{{27.event_title}}",
+                "visibility": "default",
+                "allDayEvent": true,
+                "transparency": "opaque",
+                "conferenceDate": false,
+                "guestPermissions": {
+                    "guestsCanModify": false,
+                    "guestsCanInviteOthers": true,
+                    "guestsCanSeeOtherGuests": true
+                }
+            },
+            "metadata": {
+                "designer": {
+                    "x": -409,
+                    "y": -43
+                },
+                "restore": {
+                    "expect": {
+                        "select": {
+                            "label": "In Detail"
+                        },
+                        "colorId": {
+                            "mode": "chose"
+                        },
+                        "calendar": {
+                            "mode": "chose"
+                        },
+                        "attendees": {
+                            "mode": "chose"
+                        },
+                        "overrides": {
+                            "mode": "chose"
+                        },
+                        "recurrence": {
+                            "mode": "chose"
+                        },
+                        "visibility": {
+                            "mode": "chose",
+                            "label": "Default"
+                        },
+                        "allDayEvent": {
+                            "mode": "chose"
+                        },
+                        "attachments": {
+                            "mode": "chose"
+                        },
+                        "sendUpdates": {
+                            "mode": "chose",
+                            "label": "Empty"
+                        },
+                        "transparency": {
+                            "mode": "chose",
+                            "label": "Busy"
+                        },
+                        "conferenceDate": {
+                            "mode": "chose"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "select",
+                        "type": "select",
+                        "label": "Create an Event",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "quick",
+                                "detail"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "calendar",
+                        "type": "select",
+                        "label": "Calendar ID",
+                        "required": true
+                    },
+                    {
+                        "name": "colorId",
+                        "type": "select",
+                        "label": "Color"
+                    },
+                    {
+                        "name": "summary",
+                        "type": "text",
+                        "label": "Event Name",
+                        "required": true
+                    },
+                    {
+                        "name": "allDayEvent",
+                        "type": "boolean",
+                        "label": "All Day Event",
+                        "required": true
+                    },
+                    {
+                        "name": "start",
+                        "time": true,
+                        "type": "date",
+                        "label": "Start Date",
+                        "required": true
+                    },
+                    {
+                        "name": "end",
+                        "time": true,
+                        "type": "date",
+                        "label": "End Date"
+                    },
+                    {
+                        "name": "duration",
+                        "type": "time",
+                        "label": "Duration"
+                    },
+                    {
+                        "name": "description",
+                        "type": "text",
+                        "label": "Description"
+                    },
+                    {
+                        "name": "location",
+                        "type": "text",
+                        "label": "Location"
+                    },
+                    {
+                        "name": "useDefault",
+                        "type": "boolean",
+                        "label": "Use the default reminder settings for this event"
+                    },
+                    {
+                        "name": "overrides",
+                        "spec": [
+                            {
+                                "name": "method",
+                                "type": "select",
+                                "label": "Method",
+                                "options": [
+                                    {
+                                        "label": "Email",
+                                        "value": "email"
+                                    },
+                                    {
+                                        "label": "Pop-up",
+                                        "value": "popup"
+                                    }
+                                ],
+                                "required": true
+                            },
+                            {
+                                "name": "minutes",
+                                "type": "uinteger",
+                                "label": "Minutes",
+                                "required": true,
+                                "validate": {
+                                    "max": 40320
+                                }
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Reminders",
+                        "validate": {
+                            "maxItems": 5
+                        }
+                    },
+                    {
+                        "name": "attendees",
+                        "spec": [
+                            {
+                                "name": "displayName",
+                                "type": "text",
+                                "label": "Name"
+                            },
+                            {
+                                "name": "email",
+                                "type": "email",
+                                "label": "Email",
+                                "required": true
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Attendees"
+                    },
+                    {
+                        "name": "transparency",
+                        "type": "select",
+                        "label": "Show me as",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "opaque",
+                                "transparent"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "visibility",
+                        "type": "select",
+                        "label": "Visibility",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "default",
+                                "public",
+                                "private"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sendUpdates",
+                        "type": "select",
+                        "label": "Send notifications about the event creation",
+                        "validate": {
+                            "enum": [
+                                "all",
+                                "externalOnly",
+                                "none"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "guestPermissions",
+                        "spec": [
+                            {
+                                "name": "guestsCanModify",
+                                "type": "boolean",
+                                "label": "Modify event",
+                                "required": true
+                            },
+                            {
+                                "name": "guestsCanInviteOthers",
+                                "type": "boolean",
+                                "label": "Invite others",
+                                "required": true
+                            },
+                            {
+                                "name": "guestsCanSeeOtherGuests",
+                                "type": "boolean",
+                                "label": "See guest list",
+                                "required": true
+                            }
+                        ],
+                        "type": "collection",
+                        "label": "Guest Permissions"
+                    },
+                    {
+                        "name": "recurrence",
+                        "spec": {
+                            "name": "value",
+                            "type": "text",
+                            "label": "Value"
+                        },
+                        "type": "array",
+                        "label": "Recurrence"
+                    },
+                    {
+                        "name": "conferenceDate",
+                        "type": "boolean",
+                        "label": "Add Google Meet Video Conferencing",
+                        "required": true
+                    },
+                    {
+                        "name": "attachments",
+                        "spec": [
+                            {
+                                "name": "fileUrl",
+                                "type": "url",
+                                "label": "File URL",
+                                "required": true
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Attachments"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 1,
+            "module": "google-calendar:searchEvents",
+            "version": 5,
+            "mapper": {
+                "limit": "10",
+                "orderBy": "startTime",
+                "timeMin": "{{now}}",
+                "eventTypes": [
+                    "default",
+                    "fromGmail",
+                    "focusTime",
+                    "outOfOffice",
+                    "workingLocation"
+                ],
+                "singleEvents": true
+            },
+            "metadata": {
+                "designer": {
+                    "x": -411,
+                    "y": 337
+                },
+                "restore": {
+                    "expect": {
+                        "orderBy": {
+                            "mode": "chose",
+                            "label": "Start Time (ascending)"
+                        },
+                        "calendar": {
+                            "mode": "chose"
+                        },
+                        "eventTypes": {
+                            "mode": "chose"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "calendar",
+                        "type": "select",
+                        "label": "Calendar ID",
+                        "required": true
+                    },
+                    {
+                        "name": "timeMin",
+                        "time": true,
+                        "type": "date",
+                        "label": "Start Date"
+                    },
+                    {
+                        "name": "timeMax",
+                        "time": true,
+                        "type": "date",
+                        "label": "End Date"
+                    },
+                    {
+                        "name": "updatedMin",
+                        "time": true,
+                        "type": "date",
+                        "label": "Updated from"
+                    },
+                    {
+                        "name": "singleEvents",
+                        "type": "boolean",
+                        "label": "Single Events",
+                        "required": true
+                    },
+                    {
+                        "name": "q",
+                        "type": "text",
+                        "label": "Query"
+                    },
+                    {
+                        "name": "eventTypes",
+                        "type": "select",
+                        "label": "Event Types",
+                        "multiple": true,
+                        "validate": {
+                            "enum": [
+                                "default",
+                                "fromGmail",
+                                "focusTime",
+                                "outOfOffice",
+                                "workingLocation"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "orderBy",
+                        "type": "select",
+                        "label": "Order By",
+                        "validate": {
+                            "enum": [
+                                "startTime",
+                                "updated"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "type": "uinteger",
+                        "label": "Limit"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "event_date",
+                "scope": "roundtrip",
+                "value": "{{1.start}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -72,
+                    "y": 332
+                },
+                "restore": {
+                    "expect": {
+                        "scope": {
+                            "label": "One cycle"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "Variable name",
+                        "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "type": "select",
+                        "label": "Variable lifetime",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "roundtrip",
+                                "execution"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "type": "any",
+                        "label": "Variable value"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "event_date",
+                        "type": "any",
+                        "label": "event_date"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 3,
+            "module": "builtin:BasicFeeder",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "array": "{{2.event_date}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": -64,
+                    "y": -55
+                },
+                "restore": {
+                    "expect": {
+                        "array": {
+                            "mode": "edit"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "mode": "edit",
+                        "name": "array",
+                        "spec": [],
+                        "type": "array",
+                        "label": "Array"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 5,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "DiasParaEvento",
+                "scope": "roundtrip",
+                "value": "{{ceil((formatDate(2.event_date; \"X\") - formatDate(parseDate(now; \"YYYY-MM-DD\"); \"X\")) / 86400)}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 312,
+                    "y": -69
+                },
+                "restore": {
+                    "expect": {
+                        "scope": {
+                            "label": "One cycle"
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "name",
+                        "type": "text",
+                        "label": "Variable name",
+                        "required": true
+                    },
+                    {
+                        "name": "scope",
+                        "type": "select",
+                        "label": "Variable lifetime",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "roundtrip",
+                                "execution"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "value",
+                        "type": "any",
+                        "label": "Variable value"
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "DiasParaEvento",
+                        "type": "any",
+                        "label": "DiasParaEvento"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 6,
+            "module": "builtin:BasicRouter",
+            "version": 1,
+            "mapper": null,
+            "metadata": {
+                "designer": {
+                    "x": 295,
+                    "y": 331
+                }
+            },
+            "routes": [
+                {
+                    "flow": [
+                        {
+                            "id": 7,
+                            "module": "datastore:ExistRecord",
+                            "version": 1,
+                            "filter": {
+                                "name": "7 dias",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{5.DiasParaEvento}}",
+                                            "b": "7",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "key": "{{1.id}}_7"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 838,
+                                    "y": -47
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "datastore",
+                                        "type": "datastore",
+                                        "label": "Data store",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "key",
+                                        "type": "text",
+                                        "label": "Key",
+                                        "required": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 8,
+                            "module": "telegram:SendReplyMessage",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 10027666
+                            },
+                            "filter": {
+                                "name": "Existe",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{7.exist}}",
+                                            "b": "{{false}}",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "text": "<b> Tienes una tarea nueva </b>\n\n<b> Asignatura: </b> {{1.summary}}\n<b> Fecha: </b> {{1.start}}\n<b> Descripción: </b>{{1.description}}",
+                                "parseMode": "HTML",
+                                "replyMarkup": "",
+                                "messageThreadId": "",
+                                "replyToMessageId": "",
+                                "disableNotification": true,
+                                "replyMarkupAssembleType": "reply_markup_enter"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1240,
+                                    "y": -53
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "parseMode": {
+                                            "label": "HTML"
+                                        },
+                                        "disableNotification": {
+                                            "mode": "chose"
+                                        },
+                                        "replyMarkupAssembleType": {
+                                            "label": "Enter the Reply Markup"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "telegram"
+                                            },
+                                            "label": "My Telegram Bot connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:telegram",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "chatId",
+                                        "type": "text",
+                                        "label": "Chat ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "text",
+                                        "type": "text",
+                                        "label": "Text",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageThreadId",
+                                        "type": "number",
+                                        "label": "Message Thread ID"
+                                    },
+                                    {
+                                        "name": "parseMode",
+                                        "type": "select",
+                                        "label": "Parse Mode",
+                                        "validate": {
+                                            "enum": [
+                                                "Markdown",
+                                                "HTML"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "disableNotification",
+                                        "type": "boolean",
+                                        "label": "Disable Notifications"
+                                    },
+                                    {
+                                        "name": "disableWebPagePreview",
+                                        "type": "boolean",
+                                        "label": "Disable Link Previews"
+                                    },
+                                    {
+                                        "name": "replyToMessageId",
+                                        "type": "number",
+                                        "label": "Original Message ID"
+                                    },
+                                    {
+                                        "name": "replyMarkupAssembleType",
+                                        "type": "select",
+                                        "label": "Enter/Assemble the Reply Markup Field",
+                                        "validate": {
+                                            "enum": [
+                                                "reply_markup_enter",
+                                                "reply_markup_assemble"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "replyMarkup",
+                                        "type": "text",
+                                        "label": "Reply Markup"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 9,
+                            "module": "datastore:AddRecord",
+                            "version": 1,
+                            "mapper": {
+                                "key": "{{1.id}}_7",
+                                "data": {
+                                    "event_id": "{{1.id}}"
+                                },
+                                "overwrite": false
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1611,
+                                    "y": -58
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "overwrite": {
+                                            "mode": "chose"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "datastore": {
+                                            "label": "event_reminders"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "datastore",
+                                        "type": "datastore",
+                                        "label": "Data store",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "key",
+                                        "type": "text",
+                                        "label": "Key"
+                                    },
+                                    {
+                                        "name": "overwrite",
+                                        "type": "boolean",
+                                        "label": "Overwrite an existing record",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "data",
+                                        "spec": [
+                                            {
+                                                "name": "event_id",
+                                                "type": "text",
+                                                "label": null
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Record"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 10,
+                            "module": "datastore:ExistRecord",
+                            "version": 1,
+                            "filter": {
+                                "name": "3 dias",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{5.DiasParaEvento}}",
+                                            "b": "3",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "key": "{{1.id}}_7"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 825,
+                                    "y": 265
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "datastore",
+                                        "type": "datastore",
+                                        "label": "Data store",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "key",
+                                        "type": "text",
+                                        "label": "Key",
+                                        "required": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 12,
+                            "module": "telegram:SendReplyMessage",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 10027666
+                            },
+                            "filter": {
+                                "name": "existe",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{10.exist}}",
+                                            "b": "{{false}}",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "text": "<b> Tienes una tarea nueva </b>\n\n<b> Asignatura: </b> {{1.summary}}\n<b> Fecha: </b> {{1.start}}\n<b> Descripción: </b>{{1.description}}",
+                                "parseMode": "HTML",
+                                "replyMarkup": "",
+                                "messageThreadId": "",
+                                "replyToMessageId": "",
+                                "disableNotification": true,
+                                "replyMarkupAssembleType": "reply_markup_enter"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1233,
+                                    "y": 255
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "parseMode": {
+                                            "label": "HTML"
+                                        },
+                                        "disableNotification": {
+                                            "mode": "chose"
+                                        },
+                                        "replyMarkupAssembleType": {
+                                            "label": "Enter the Reply Markup"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "telegram"
+                                            },
+                                            "label": "My Telegram Bot connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:telegram",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "chatId",
+                                        "type": "text",
+                                        "label": "Chat ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "text",
+                                        "type": "text",
+                                        "label": "Text",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageThreadId",
+                                        "type": "number",
+                                        "label": "Message Thread ID"
+                                    },
+                                    {
+                                        "name": "parseMode",
+                                        "type": "select",
+                                        "label": "Parse Mode",
+                                        "validate": {
+                                            "enum": [
+                                                "Markdown",
+                                                "HTML"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "disableNotification",
+                                        "type": "boolean",
+                                        "label": "Disable Notifications"
+                                    },
+                                    {
+                                        "name": "disableWebPagePreview",
+                                        "type": "boolean",
+                                        "label": "Disable Link Previews"
+                                    },
+                                    {
+                                        "name": "replyToMessageId",
+                                        "type": "number",
+                                        "label": "Original Message ID"
+                                    },
+                                    {
+                                        "name": "replyMarkupAssembleType",
+                                        "type": "select",
+                                        "label": "Enter/Assemble the Reply Markup Field",
+                                        "validate": {
+                                            "enum": [
+                                                "reply_markup_enter",
+                                                "reply_markup_assemble"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "replyMarkup",
+                                        "type": "text",
+                                        "label": "Reply Markup"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 13,
+                            "module": "datastore:AddRecord",
+                            "version": 1,
+                            "mapper": {
+                                "key": "{{1.id}}_7",
+                                "data": {
+                                    "event_id": "{{1.id}}"
+                                },
+                                "overwrite": false
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1602,
+                                    "y": 252
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "overwrite": {
+                                            "mode": "chose"
+                                        }
+                                    }
+                                    
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "datastore",
+                                        "type": "datastore",
+                                        "label": "Data store",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "key",
+                                        "type": "text",
+                                        "label": "Key"
+                                    },
+                                    {
+                                        "name": "overwrite",
+                                        "type": "boolean",
+                                        "label": "Overwrite an existing record",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "data",
+                                        "spec": [
+                                            {
+                                                "name": "event_id",
+                                                "type": "text",
+                                                "label": null
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Record"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 11,
+                            "module": "datastore:ExistRecord",
+                            "version": 1,
+                            "filter": {
+                                "name": "1 dia",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{5.DiasParaEvento}}",
+                                            "b": "1",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "key": "{{1.id}}_7"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 818,
+                                    "y": 581
+                                },
+                                "restore": {
+                                    "parameters": {
+                                        
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "datastore",
+                                        "type": "datastore",
+                                        "label": "Data store",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "key",
+                                        "type": "text",
+                                        "label": "Key",
+                                        "required": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 14,
+                            "module": "telegram:SendReplyMessage",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 10027666
+                            },
+                            "filter": {
+                                "name": "1 dia",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{11.exist}}",
+                                            "b": "{{false}}",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "text": "<b> Tienes una tarea nueva </b>\n\n<b> Asignatura: </b> {{1.summary}}\n<b> Fecha: </b> {{1.start}}\n<b> Descripción: </b>{{1.description}}",
+                                "parseMode": "HTML",
+                                "replyMarkup": "",
+                                "messageThreadId": "",
+                                "replyToMessageId": "",
+                                "disableNotification": true,
+                                "replyMarkupAssembleType": "reply_markup_enter"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1227,
+                                    "y": 574
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "parseMode": {
+                                            "label": "HTML"
+                                        },
+                                        "disableNotification": {
+                                            "mode": "chose"
+                                        },
+                                        "replyMarkupAssembleType": {
+                                            "label": "Enter the Reply Markup"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "telegram"
+                                            },
+                                            "label": "My Telegram Bot connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:telegram",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "chatId",
+                                        "type": "text",
+                                        "label": "Chat ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "text",
+                                        "type": "text",
+                                        "label": "Text",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageThreadId",
+                                        "type": "number",
+                                        "label": "Message Thread ID"
+                                    },
+                                    {
+                                        "name": "parseMode",
+                                        "type": "select",
+                                        "label": "Parse Mode",
+                                        "validate": {
+                                            "enum": [
+                                                "Markdown",
+                                                "HTML"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "disableNotification",
+                                        "type": "boolean",
+                                        "label": "Disable Notifications"
+                                    },
+                                    {
+                                        "name": "disableWebPagePreview",
+                                        "type": "boolean",
+                                        "label": "Disable Link Previews"
+                                    },
+                                    {
+                                        "name": "replyToMessageId",
+                                        "type": "number",
+                                        "label": "Original Message ID"
+                                    },
+                                    {
+                                        "name": "replyMarkupAssembleType",
+                                        "type": "select",
+                                        "label": "Enter/Assemble the Reply Markup Field",
+                                        "validate": {
+                                            "enum": [
+                                                "reply_markup_enter",
+                                                "reply_markup_assemble"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "replyMarkup",
+                                        "type": "text",
+                                        "label": "Reply Markup"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 15,
+                            "module": "datastore:AddRecord",
+                            "version": 1,
+                            "mapper": {
+                                "key": "{{1.id}}_7",
+                                "data": {
+                                    "event_id": "{{1.id}}"
+                                },
+                                "overwrite": false
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1596,
+                                    "y": 576
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "overwrite": {
+                                            "mode": "chose"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "datastore",
+                                        "type": "datastore",
+                                        "label": "Data store",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "key",
+                                        "type": "text",
+                                        "label": "Key"
+                                    },
+                                    {
+                                        "name": "overwrite",
+                                        "type": "boolean",
+                                        "label": "Overwrite an existing record",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "data",
+                                        "spec": [
+                                            {
+                                                "name": "event_id",
+                                                "type": "text",
+                                                "label": null
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Record"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": [
+                [
+                    {
+                        "id": 29,
+                        "module": "util:SetVariable2",
+                        "version": 1,
+                        "parameters": {},
+                        "mapper": {
+                            "name": "event_dia",
+                            "scope": "roundtrip",
+                            "value": "{{25.`__IMTMATCH__`[3]}}"
+                        },
+                        "metadata": {
+                            "designer": {
+                                "x": -1785,
+                                "y": 742,
+                                "messages": [
+                                    {
+                                        "category": "reference",
+                                        "severity": "warning",
+                                        "message": "Referenced module 'Text parser - Match pattern (Advanced)' [25] is not accessible."
+                                    },
+                                    {
+                                        "category": "link",
+                                        "severity": "warning",
+                                        "message": "The module is not connected to the data flow."
+                                    }
+                                ]
+                            },
+                            "restore": {
+                                "expect": {
+                                    "scope": {
+                                        "label": "One cycle"
+                                    }
+                                }
+                            },
+                            "expect": [
+                                {
+                                    "name": "name",
+                                    "type": "text",
+                                    "label": "Variable name",
+                                    "required": true
+                                },
+                                {
+                                    "name": "scope",
+                                    "type": "select",
+                                    "label": "Variable lifetime",
+                                    "required": true,
+                                    "validate": {
+                                        "enum": [
+                                            "roundtrip",
+                                            "execution"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "value",
+                                    "type": "any",
+                                    "label": "Variable value"
+                                }
+                            ],
+                            "interface": [
+                                {
+                                    "name": "event_dia",
+                                    "type": "any",
+                                    "label": "event_dia"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": 31,
+                        "module": "util:SetVariable2",
+                        "version": 1,
+                        "parameters": {},
+                        "mapper": {
+                            "name": "event_hora",
+                            "scope": "roundtrip",
+                            "value": "{{25.`__IMTMATCH__`[5]}}"
+                        },
+                        "metadata": {
+                            "designer": {
+                                "x": -1431,
+                                "y": 734,
+                                "messages": [
+                                    {
+                                        "category": "reference",
+                                        "severity": "warning",
+                                        "message": "Referenced module 'Text parser - Match pattern (Advanced)' [25] is not accessible."
+                                    }
+                                ]
+                            },
+                            "restore": {
+                                "expect": {
+                                    "scope": {
+                                        "label": "One cycle"
+                                    }
+                                }
+                            },
+                            "expect": [
+                                {
+                                    "name": "name",
+                                    "type": "text",
+                                    "label": "Variable name",
+                                    "required": true
+                                },
+                                {
+                                    "name": "scope",
+                                    "type": "select",
+                                    "label": "Variable lifetime",
+                                    "required": true,
+                                    "validate": {
+                                        "enum": [
+                                            "roundtrip",
+                                            "execution"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "value",
+                                    "type": "any",
+                                    "label": "Variable value"
+                                }
+                            ],
+                            "interface": [
+                                {
+                                    "name": "event_hora",
+                                    "type": "any",
+                                    "label": "event_hora"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            ]
+        },
+        "zone": "eu2.make.com",
+        "notes": []
+    }
+}
