@@ -527,8 +527,8 @@
             line-height: 1.5;
         }
 
-        /* Estilo para el botón de PayPal */
-        .paypal-btn {
+        /* Estilo para el botón de PayPal y feedback */
+        .paypal-btn, .feedback-btn {
             width: auto;
             padding: 12px 24px;
             border-radius: 8px;
@@ -540,13 +540,14 @@
             transition: all 0.3s ease;
             box-shadow: var(--shadow);
             margin-top: 16px;
-            margin-bottom: 24px; /* Aumentado para más espacio */
+            margin-bottom: 24px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            text-decoration: none;
         }
 
-        .paypal-btn:hover {
+        .paypal-btn:hover, .feedback-btn:hover {
             transform: scale(0.95);
         }
 
@@ -588,11 +589,11 @@
                 font-size: 28px;
             }
 
-            .paypal-btn {
+            .paypal-btn, .feedback-btn {
                 width: auto;
                 padding: 10px 20px;
                 font-size: 14px;
-                margin-bottom: 20px; /* Ajustado para móviles */
+                margin-bottom: 20px;
             }
 
             .footer-legal {
@@ -601,7 +602,7 @@
             }
 
             .use-cases-grid {
-                grid-template-columns: 1fr 1fr; /* Mantiene 2x2 en móviles */
+                grid-template-columns: 1fr 1fr;
                 gap: 16px;
             }
 
@@ -619,14 +620,14 @@
         }
 
         @media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
-            .record-btn, .paypal-btn {
+            .record-btn, .paypal-btn, .feedback-btn {
                 -webkit-transform: translateZ(0);
                 transform: translateZ(0);
             }
         }
 
         @supports (-webkit-touch-callout: none) {
-            .record-btn, .paypal-btn {
+            .record-btn, .paypal-btn, .feedback-btn {
                 -webkit-transform: translate3d(0, 0, 0);
                 transform: translate3d(0, 0, 0);
             }
@@ -652,7 +653,7 @@
             }
         }
 
-        input, button {
+        input, button, a.feedback-btn {
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
@@ -699,7 +700,7 @@
                         spellcheck="false"
                     >
                     <p class="instruction-text">
-                        ¿No sabes cómo configurarlo? Mira mi <a href="URL_DEL_TUTORIAL" class="webhook-link">tutorial</a> o descarga mi <a href="VoiceCalendar.blueprint.json" class="webhook-link" download>plantilla de Make</a>.
+                        ¿No sabes cómo configurarlo? Mira mi <a href="https://tu-tutorial-url.com" class="webhook-link">tutorial</a> o descarga mi <a href="/voicecalendar_blueprint.json" class="webhook-link" download="voicecalendar_blueprint.json">plantilla de Make</a>. Configura tu <b>chat_id</b> en Make con <a href="https://t.me/myidbot" class="webhook-link">@myidbot</a>.
                     </p>
                 </div>
             </div>
@@ -800,8 +801,8 @@
                 </form>
                 <p class="instruction-text">Soy un estudiante de 16 años aprendiendo IA. Tu apoyo me motiva a mejorar VoiceCalendar.</p>
 
-                <a href="URL_DEL_FORMULARIO" target="_blank" class="download-link mt-4">
-                    <i class="fas fa-comment"></i> Dime qué te parece (formulario)
+                <a href="https://forms.gle/YOUR_FORM_LINK" target="_blank" class="feedback-btn">
+                    <i class="fas fa-comment"></i> ¡Ayúdame a mejorar VoiceCalendar! Comparte tu opinión en 1 minuto
                 </a>
             </div>
         </div>
@@ -1265,19 +1266,8 @@
                     throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
                 }
 
-                let result = {};
-                try {
-                    const text = await response.text();
-                    if (text) {
-                        result = JSON.parse(text);
-                    }
-                } catch (e) {
-                    console.warn('La respuesta del webhook no es JSON válido:', e.message);
-                    // No mostrar error si el audio se grabó correctamente
-                    result = { transcript: 'Transcripción no disponible' };
-                }
-
-                transcript.textContent = result.transcript || 'Transcripción no disponible';
+                // No esperamos una transcripción en la respuesta
+                transcript.textContent = 'Evento enviado para procesamiento';
                 transcript.classList.add('has-content');
                 statusText.textContent = 'Procesamiento completado';
                 showSuccess('¡Evento programado correctamente!');
