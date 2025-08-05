@@ -1,0 +1,503 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Tutorial - VoiceCalendar</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --light-gray: #f9fafb;
+            --white: #ffffff;
+            --border: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #f9fafb 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            color: var(--dark);
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            overscroll-behavior: none;
+        }
+
+        .main-container {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 720px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 32px;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 32px 24px 24px;
+            text-align: center;
+            color: var(--white);
+            position: relative;
+        }
+
+        .header-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: var(--white);
+            border-radius: 16px 16px 0 0;
+            transform: translateY(8px);
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .app-subtitle {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .main-content {
+            padding: 32px 24px;
+        }
+
+        .tutorial-section {
+            background: var(--light-gray);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .tutorial-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tutorial-step {
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .step-description {
+            font-size: 14px;
+            color: var(--gray);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .step-description ol {
+            list-style: decimal;
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        .step-description li {
+            margin-bottom: 8px;
+        }
+
+        .webhook-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .webhook-link:hover {
+            color: var(--primary-dark);
+        }
+
+        .example-section {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .example-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--success);
+            font-size: 14px;
+        }
+
+        .example-text {
+            font-size: 14px;
+            color: var(--dark);
+            font-weight: 500;
+            font-style: italic;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .paypal-btn, .feedback-btn {
+            width: auto;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #0070ba 0%, #005ea6 100%);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            margin-top: 16px;
+            margin-bottom: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .paypal-btn:hover, .feedback-btn:hover {
+            transform: scale(0.95);
+        }
+
+        .footer {
+            padding: 16px;
+            text-align: center;
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: var(--primary-dark);
+        }
+
+        .footer-legal {
+            margin-top: 8px;
+            font-size: 11px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .footer-legal a {
+            color: var(--gray);
+        }
+
+        .footer-legal a:hover {
+            color: var(--primary);
+        }
+
+        .footer-legal .separator {
+            color: var(--gray);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .main-container {
+                margin: 0;
+                border-radius: 12px;
+            }
+
+            .header-section {
+                padding: 24px 16px 16px;
+            }
+
+            .app-title {
+                font-size: 20px;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .app-subtitle {
+                font-size: 13px;
+            }
+
+            .main-content {
+                padding: 24px 16px;
+            }
+
+            .tutorial-section {
+                padding: 16px;
+            }
+
+            .paypal-btn, .feedback-btn {
+                width: auto;
+                padding: 10px 20px;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+
+            .footer-legal {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        @media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
+            .paypal-btn, .feedback-btn {
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+            }
+        }
+
+        @supports (-webkit-touch-callout: none) {
+            .paypal-btn, .feedback-btn {
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        a.feedback-btn, a.paypal-btn {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            /* Add dark mode if needed */
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-section">
+            <h1 class="app-title">
+                <i class="fas fa-microphone-alt"></i>
+                <span>Tutorial de VoiceCalendar</span>
+            </h1>
+            <p class="app-subtitle">Aprende a configurar VoiceCalendar en pocos pasos para programar eventos con tu voz. ¡Es fácil y rápido!</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="tutorial-section">
+                <h3 class="tutorial-title">
+                    <i class="fas fa-book"></i>
+                    Cómo usar VoiceCalendar
+                </h3>
+                <div class="tutorial-step">
+                    <p class="step-number">Paso 1: Obtén tu chat_id de Telegram</p>
+                    <div class="step-description">
+                        <p>VoiceCalendar envía confirmaciones y recordatorios a través de Telegram. Necesitas un <b>chat_id</b> para configurarlo.</p>
+                        <ol>
+                            <li>Abre Telegram y busca <a href="https://t.me/myidbot" class="webhook-link" target="_blank">@myidbot</a>.</li>
+                            <li>Escribe <b>/start</b> y luego <b>/getid</b>.</li>
+                            <li>El bot te dará un número (por ejemplo, <code>123456789</code>). Copia este <b>chat_id</b> y guárdalo, lo usarás en el siguiente paso.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="tutorial-step">
+                    <p class="step-number">Paso 2: Configura el blueprint en Make.com</p>
+                    <div class="step-description">
+                        <p>Usaremos Make.com para procesar tu voz y crear eventos en Google Calendar. Descarga mi plantilla para simplificar el proceso.</p>
+                        <ol>
+                            <li>Descarga la <a href="/voicecalendar_blueprint.json" class="webhook-link" download="voicecalendar_blueprint.json">plantilla de Make</a>.</li>
+                            <li>Ve a <a href="https://www.make.com" class="webhook-link" target="_blank">Make.com</a> y crea una cuenta (o inicia sesión).</li>
+                            <li>Haz clic en <b>Create a new scenario</b> y selecciona <b>Import Blueprint</b>.</li>
+                            <li>Sube el archivo <code>voicecalendar_blueprint.json</code> que descargaste.</li>
+                            <li>Configura los módulos:
+                                <ul>
+                                    <li><b>Webhook</b>: Copia la URL del webhook (por ejemplo, <code>https://hook.eu2.make.com/xyz123</code>). La usarás en VoiceCalendar.</li>
+                                    <li><b>Google Calendar</b>: Conecta tu cuenta de Google y selecciona el calendario donde quieres crear los eventos.</li>
+                                    <li><b>Telegram</b>: Pega el <b>chat_id</b> que obtuviste en el Paso 1 y configura el bot de Telegram (crea uno con <a href="https://t.me/BotFather" class="webhook-link" target="_blank">@BotFather</a> si no lo tienes).</li>
+                                </ul>
+                            </li>
+                            <li>Activa el escenario haciendo clic en <b>Run</b> o el botón de encendido.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="tutorial-step">
+                    <p class="step-number">Paso 3: Conecta VoiceCalendar</p>
+                    <div class="step-description">
+                        <p>Ahora que tienes la URL del webhook, conéctala a VoiceCalendar.</p>
+                        <ol>
+                            <li>Ve a <a href="/index.html" class="webhook-link">VoiceCalendar</a>.</li>
+                            <li>En la sección <b>Configuración</b>, pega la URL del webhook en el campo <b>URL del Webhook</b>.</li>
+                            <li>Haz clic en el botón del micrófono y di un comando de voz (ver el siguiente paso).</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="tutorial-step">
+                    <p class="step-number">Paso 4: Prueba con un comando de voz</p>
+                    <div class="step-description">
+                        <p>VoiceCalendar reconoce comandos en el formato: <b>Evento, Día, Fecha, Hora</b>.</p>
+                        <div class="example-section">
+                            <div class="example-header">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Ejemplo:</span>
+                            </div>
+                            <div class="example-text">
+                                "Evento: Reunión con Ana, Día: jueves, Fecha: 25 de julio, Hora: 11"
+                            </div>
+                        </div>
+                        <ol>
+                            <li>Graba el comando usando el botón del micrófono en VoiceCalendar.</li>
+                            <li>Espera unos segundos mientras se procesa.</li>
+                            <li>Verifica en tu Google Calendar que el evento se creó correctamente.</li>
+                            <li>Recibirás un mensaje de confirmación en Telegram en el <b>chat_id</b> configurado.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="tutorial-step">
+                    <p class="step-number">Paso 5: Comparte tu feedback</p>
+                    <div class="step-description">
+                        <p>¡Soy un estudiante de 16 años y quiero mejorar VoiceCalendar! Por favor, completa mi formulario de feedback (toma 1 minuto).</p>
+                        <a href="https://forms.gle/YOUR_FORM_LINK" target="_blank" class="feedback-btn">
+                            <i class="fas fa-comment"></i> ¡Comparte tu opinión!
+                        </a>
+                        <p>Si tienes dudas o problemas, contáctame en <a href="https://x.com/tu_usuario" class="webhook-link" target="_blank">X</a>.</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-step">
+                    <p class="step-number">Notas finales</p>
+                    <div class="step-description">
+                        <p>Si encuentras problemas, revisa lo siguiente:</p>
+                        <ul>
+                            <li><b>Micrófono</b>: Asegúrate de que VoiceCalendar tenga permisos para usar el micrófono (en móviles, usa HTTPS y permite el acceso en la configuración del navegador).</li>
+                            <li><b>Webhook</b>: Verifica que la URL del webhook sea correcta y que el escenario en Make.com esté activo.</li>
+                            <li><b>Google Calendar</b>: Confirma que seleccionaste el calendario correcto en Make.com.</li>
+                            <li><b>Telegram</b>: Asegúrate de que el <b>chat_id</b> y el token del bot sean correctos.</li>
+                        </ul>
+                        <p>¿Todo listo? ¡Vuelve a VoiceCalendar y empieza a programar eventos con tu voz!</p>
+                        <a href="/index.html" class="paypal-btn">
+                            <i class="fas fa-arrow-left"></i> Volver a VoiceCalendar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Desarrollado con <i class="fas fa-heart"></i> por un estudiante de 16 años apasionado por IA</p>
+        <div class="footer-legal">
+            <a href="legal.html">Aviso Legal</a>
+            <span class="separator">•</span>
+            <a href="privacy.html">Política de Privacidad</a>
+            <span class="separator">•</span>
+            <a href="https://x.com/tu_usuario" target="_blank">Contáctame en X</a>
+        </div>
+    </footer>
+</body>
+</html>
